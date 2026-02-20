@@ -1,0 +1,37 @@
+# Rider
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+.idea/
+*.iml
+
+# Rider Caches
+/.idea/
+*.iws
+*.ipr
+*.iws
+
+# Build output
+**/bin/
+**/obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio / Rider launch settings
+**/launchSettings.json
+
+# DotNet secrets
+secrets.json
+
+# appsettings (если не хочешь коммитить конфиги с паролями)
+**/appsettings.json
+
+# OS generated files
+.DS_Store
+Thumbs.db
