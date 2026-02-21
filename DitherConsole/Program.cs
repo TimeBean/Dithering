@@ -1,4 +1,5 @@
 ﻿using Dither;
+using Dither.Quantizers;
 using SkiaSharp;
 
 namespace DitherConsole
@@ -11,7 +12,8 @@ namespace DitherConsole
             using var bitmap = SKBitmap.Decode(input);
 
             var pixelSpan = bitmap.GetPixelSpan();
-            pixelSpan.Dither();
+            pixelSpan.Dither(new LinearQuantizer(4));
+            //pixelSpan.Dither(new OneBitQuantizer(false));
             
             using var image = SKImage.FromBitmap(bitmap);
             using var data = image.Encode(SKEncodedImageFormat.Png, 100);
