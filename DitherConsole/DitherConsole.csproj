@@ -12,4 +12,14 @@
       <ProjectReference Include="..\Dither\Dither.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Examples\Mirana.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.2" />
+    </ItemGroup>
+
 </Project>
