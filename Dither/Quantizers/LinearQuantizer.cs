@@ -11,25 +11,25 @@ public class LinearQuantizer : IQuantizer
         Levels = levels;
     }
     
-    public Span<byte> Quantize(Span<byte> pixels)
-    {
-        for (var i = 0; i < pixels.Length; i += 4)
-        {
-            pixels[i + 0] = QuantizeChannel(pixels[i + 0]);
-            pixels[i + 1] = QuantizeChannel(pixels[i + 1]);
-            pixels[i + 2] = QuantizeChannel(pixels[i + 2]);
-        }
-        
-        return pixels;
-    }
-
-    private byte QuantizeChannel(byte pixelChannel)
+    public float[] Quantize(float[] pixels)
     {
         if (Levels is <= 1 or >= 256)
-            throw new WrongLevelQuantityException($"Level number must be between 1 and 255, inclusive: {Levels}");
+            throw new WrongLevelQuantityException($"Level number must be between 2 and 255, inclusive: {Levels}");
+
+        var newPixels = new List<float>();
+
+        foreach (var pixel in pixels)
+        {
+            var levelsMinusOne = Levels - 1;
+            var index = (int)Math.Round(pixel * (levelsMinusOne / 255.0));
+            if (index < 0) index = 0;
+            if (index > levelsMinusOne) index = levelsMinusOne;
+
+            var value = index * (255.0 / levelsMinusOne);
+            
+            newPixels.Add((float)value);
+        }
         
-        var step = (byte)(255 / (Levels - 1));
-        
-        return (byte)(Math.Round((double)pixelChannel / step) * step);
+        return newPixels.ToArray();
     }
 }
