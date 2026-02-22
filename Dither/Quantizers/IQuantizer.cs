@@ -2,5 +2,5 @@ namespace Dither.Quantizers;
 
 public interface IQuantizer
 {
-    public Span<byte> Quantize(Span<byte> pixels);
+    public float[] Quantize(float[] pixels);
 }
