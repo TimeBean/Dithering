@@ -18,10 +18,10 @@ public class LinearQuantizer : IQuantizer
 
         var newPixels = new List<float>();
 
-        foreach (var pixel in pixels)
+        foreach (var color in pixels)
         {
             var levelsMinusOne = Levels - 1;
-            var index = (int)Math.Round(pixel * (levelsMinusOne / 255.0));
+            var index = (int)Math.Round(color * (levelsMinusOne / 255.0));
             if (index < 0) index = 0;
             if (index > levelsMinusOne) index = levelsMinusOne;
 
