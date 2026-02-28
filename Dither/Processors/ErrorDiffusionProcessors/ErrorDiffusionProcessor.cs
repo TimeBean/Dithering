@@ -3,14 +3,14 @@ using Dither.Quantizers;
 
 namespace Dither.Processors;
 
-public class FloydSteinbergProcessor : IProcessor
+public abstract class ErrorDiffusionProcessor : IProcessor
 {
-    public int Width { get; }
-    public int Height { get; }
-    public int RowBytes { get; }
-    public int BytesPerPixel { get; }
-
-    public FloydSteinbergProcessor(int width, int height, int rowBytes, int bytesPerPixel)
+    public int Width { get; protected init; }
+    public int Height { get; protected init; }
+    public int RowBytes { get; protected init; }
+    public int BytesPerPixel { get; protected init; }
+    
+    protected ErrorDiffusionProcessor(int width, int height, int rowBytes, int bytesPerPixel)
     {
         Width = width;
         Height = height;
@@ -51,29 +51,5 @@ public class FloydSteinbergProcessor : IProcessor
         return pixels;
     }
 
-    private void DistributeError(Span<byte> pixels, int x, int y, int channel, double error)
-    {
-        Add(x + 1, y, 7.0 / 16.0, pixels);
-        Add(x - 1, y + 1, 3.0 / 16.0, pixels);
-        Add(x, y + 1, 5.0 / 16.0, pixels);
-        Add(x + 1, y + 1, 1.0 / 16.0, pixels);
-        return;
-
-        void Add(int nx, int ny, double factor, Span<byte> pixelsAdd)
-        {
-            if (nx < 0 || nx >= Width || ny < 0 || ny >= Height)
-                return;
-
-            var idx = ny * RowBytes + nx * BytesPerPixel + channel;
-
-            var value = pixelsAdd[idx] + error * factor;
-
-            if (value > 255)
-                value = 255;
-            if (value < 0)
-                value = 0;
-
-            pixelsAdd[idx] = (byte)Math.Round(value);
-        }
-    }
+    protected abstract void DistributeError(Span<byte> pixels, int x, int y, int channel, double error);
 }
