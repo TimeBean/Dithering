@@ -13,6 +13,8 @@ riderModule.iml
 *.ipr
 *.iws
 
+DitherConsole/Palettes/
+
 # Build output
 **/bin/
 **/obj/

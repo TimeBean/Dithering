@@ -2,40 +2,6 @@ namespace DitherConsole;
 
 public static class Constants
 {
-    public static readonly float[,] Palette0 = new[,]
-    {
-        { 216f, 245f, 250f }, // #faf5d8
-        { 139f, 174f, 216f }, // #d8ae8b
-        { 27f, 24f, 33f }, // #21181b
-        { 42f, 95f, 205f }, // #cd5f2a
-        { 55f, 171f, 242f } // #f2ab37
-    };
-    
-    public static readonly float[,] Palette1 = new[,]
-    {
-        { 173f, 187f, 251f }, // #fbbbad
-        { 150f, 122f, 74f }, // #4a7a96
-        { 88f, 63f, 51f }, // #333f58
-        { 49f, 40f, 41f } // #292831
-    };
-
-    public static readonly float[,] Palette2 = new[,]
-    {
-        { 35f, 35f, 34f }, // #222323
-        { 240f, 246f, 240f } // #f0f6f0
-    };
-
-    public static readonly float[,] Palette3 = new[,]
-    {
-        { 255f, 255f, 255f }, // #ffffff
-        { 242f, 230f, 12f }, // #0ce6f2
-        { 219f, 152f, 0f }, // #0098db
-        { 156f, 87f, 30f }, // #1e579c
-        { 98f, 53f, 32f }, // #203562
-        { 70f, 36f, 37f }, // #252446
-        { 51f, 21f, 32f } // #201533
-    };
-        
     public static readonly int[,] Bayer2 =
     {
         { 0, 2 },
