@@ -1,4 +1,3 @@
-using Dither.DitherStrategy;
 using Dither.Quantizers;
 
 namespace Dither.Processors;

@@ -1,7 +1,4 @@
-using Dither.DitherStrategy;
-using Dither.Quantizers;
-
-namespace Dither.Processors;
+namespace Dither.Processors.ErrorDiffusionProcessors;
 
 public class FloydSteinbergProcessor : ErrorDiffusionProcessor
 {

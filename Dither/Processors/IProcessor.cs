@@ -1,6 +1,6 @@
 using Dither.Quantizers;
 
-namespace Dither.DitherStrategy;
+namespace Dither.Processors;
 
 public interface IProcessor
 {

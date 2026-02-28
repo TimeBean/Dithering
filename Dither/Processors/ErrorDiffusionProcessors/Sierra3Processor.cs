@@ -1,4 +1,4 @@
-namespace Dither.Processors;
+namespace Dither.Processors.ErrorDiffusionProcessors;
 
 public class Sierra3Processor : ErrorDiffusionProcessor
 {

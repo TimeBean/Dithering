@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Dither.DitherStrategy;
 using Dither.Processors;
 using Dither.Processors.ErrorDiffusionProcessors;
 using Dither.Quantizers;
