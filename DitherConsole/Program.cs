@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using Dither.Processors;
 using Dither.Processors.ErrorDiffusionProcessors;
+using Dither.Processors.OrderedProcessors;
 using Dither.Quantizers;
 using SkiaSharp;
 

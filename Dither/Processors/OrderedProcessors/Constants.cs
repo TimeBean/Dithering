@@ -1,4 +1,4 @@
-namespace DitherConsole;
+namespace Dither.Processors.OrderedProcessors;
 
 public static class Constants
 {

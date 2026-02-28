@@ -1,6 +1,6 @@
 using Dither.Quantizers;
 
-namespace Dither.Processors;
+namespace Dither.Processors.OrderedProcessors;
 
 public class OrderedProcessor : IProcessor
 {
