@@ -2,7 +2,7 @@ using Dither.Quantizers;
 
 namespace Dither.Processors;
 
-public class BayerProcessor : IProcessor
+public class OrderedProcessor : IProcessor
 {
     public int Width { get; }
     public int Height { get; }
@@ -13,7 +13,7 @@ public class BayerProcessor : IProcessor
     private readonly int _matrixSize;
     private readonly int _matrixCells;
 
-    public BayerProcessor(int width, int height, int rowBytes, int bytesPerPixel, int[,] matrix)
+    public OrderedProcessor(int width, int height, int rowBytes, int bytesPerPixel, int[,] matrix)
     {
         Width = width;
         Height = height;

@@ -4,10 +4,21 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>TimeBeanDithering</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>TimeBean</Authors>
+        <Company>TimeBean</Company>
+        <Description>.NET implementation of dithering</Description>
+        <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/TimeBean/Dithering</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="SkiaSharp" Version="3.119.3-preview.1.1" />
+        <PackageReference Include="SkiaSharp" Version="3.119.3-preview.1.1" />
+        <None Include="../README.md" Pack="true" PackagePath="" />
     </ItemGroup>
 
 </Project>

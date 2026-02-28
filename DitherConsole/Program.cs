@@ -59,9 +59,17 @@ namespace DitherConsole
                 ("Jarvis-Judice-Ninke", () => new JarvisJudiceNinkeProcessor(width, height, rowBytes, bpp)),
                 ("Sierra_3_Row", () => new Sierra3Processor(width, height, rowBytes, bpp)),
                 ("Stucki", () => new StuckiProcessor(width, height, rowBytes, bpp)),
-                ("Bayer_2x2", () => new BayerProcessor(width, height, rowBytes, bpp, Constants.Bayer2)),
-                ("Bayer_4x4", () => new BayerProcessor(width, height, rowBytes, bpp, Constants.Bayer4)),
-                ("Bayer_8x8", () => new BayerProcessor(width, height, rowBytes, bpp, Constants.Bayer8)),
+                ("Bayer_2x2", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Bayer2)),
+                ("Bayer_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Bayer4)),
+                ("Bayer_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Bayer8)),
+                ("Cluster_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Cluster4)),
+                ("Cluster_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Cluster8)),
+                ("Halftone_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Halftone4)),
+                ("Halftone_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Halftone8)),
+                ("VoidCluster_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.VoidCluster4)),
+                ("VoidCluster_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.VoidCluster8)),
+                ("BlueNoise_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.BlueNoise4)),
+                ("BlueNoise_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.BlueNoise8)),
             };
 
             var palettes = new PaletteCaster().ParsePalettes();
