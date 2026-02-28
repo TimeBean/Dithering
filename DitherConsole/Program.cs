@@ -28,42 +28,7 @@ namespace DitherConsole
 
         private const bool IsDebug = true;
 
-        private static void Main(string[] args)
-        {
-            // load file
-            using var input = File.OpenRead(@"Examples/Mirana.png");
-
-            // get bitmap from file stream
-            using var originalBitmap = SKBitmap.Decode(input);
-
-            
-            // stats
-            var width = originalBitmap.Width;
-            var height = originalBitmap.Height;
-            var rowBytes = originalBitmap.RowBytes;
-            var bytesPerPixel = originalBitmap.BytesPerPixel;
-
-            // pixelSpan that will be modified
-            var pixelSpan = originalBitmap.GetPixelSpan();
-
-            // reduces the number of colors to a fixed palette (e.g. 4 colors)
-            var quantizer = new LinearQuantizer(4);
-
-            // applies error diffusion dithering using Floyd–Steinberg
-            var processor = new FloydSteinbergProcessor(width, height, rowBytes, bytesPerPixel);
-
-            // dithring itself
-            var dithered = processor.Process(pixelSpan, quantizer);
-
-            // copy dithered span to original span
-            dithered.CopyTo(pixelSpan);
-
-            // save bitmap to file
-            var fileName = $"Out/dithered.png";
-            SaveBitmap(originalBitmap, fileName);
-        }
-
-        /*private static void Main()
+        private static void Main()
         {
             using var input = File.OpenRead(@"Examples/Mirana.png");
             //using var input = File.OpenRead(@"Examples/Vanko.jpg");
@@ -166,9 +131,9 @@ namespace DitherConsole
                             DrawPalette(canvas, ((PaletteQuantizer)quantizers[qIndex].Quantizer).Palette, xPosition + leftOffset,
                                 yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize + fontSize);
                         }
-
+                        
                         DrawPalette(canvas, dithered.GetUniqueColors(), xPosition + leftOffset,
-                            yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize + fontSize + 12);#1#
+                            yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize + fontSize + 12);*/
                     }
 
                     perAlgorithmStopwatch.Start();
@@ -189,26 +154,26 @@ namespace DitherConsole
             SaveBitmap(compilationBitmap, compilationFileName);
             Console.WriteLine(
                 $"\nCompilation generated: {compilationFileName} ({millis} ms for {imagesCount} images i.e. {Math.Round(millis / (float)imagesCount, 2)} ms for image)");
-        }*/
-
+        }
+        
         private static void DrawText(SKCanvas canvas, string text, int xPosition, int yPosition)
         {
             canvas.DrawText(text, xPosition + 2, yPosition + 1, Font, ShadowPaint);
             canvas.DrawText(text, xPosition, yPosition, Font, TextPaint);
         }
-
+        
         private static void DrawPalette(SKCanvas canvas, float[,] palette, int xPosition, int yPosition)
         {
             var colorCount = palette.GetColorCount();
-
-            if (colorCount <= 0)
+            
+            if (colorCount <= 0) 
                 return;
 
             var colors = palette.ToSkColors();
 
             const int cellWidth = 8;
             const int cellHeight = 8;
-            const int border = 1;
+            const int border = 1; 
 
             var totalWidth = border * 2 + colorCount * cellWidth;
             const int totalHeight = border * 2 + cellHeight;
@@ -216,13 +181,13 @@ namespace DitherConsole
             using var bgPaint = new SKPaint();
             bgPaint.Style = SKPaintStyle.Fill;
             bgPaint.Color = SKColors.Purple;
-
+            
             canvas.DrawRect(xPosition, yPosition, totalWidth, totalHeight, bgPaint);
 
             using var fillPaint = new SKPaint();
             fillPaint.Style = SKPaintStyle.Fill;
             fillPaint.IsAntialias = true;
-
+            
             for (var i = 0; i < colorCount; i++)
             {
                 fillPaint.Color = colors[i];
