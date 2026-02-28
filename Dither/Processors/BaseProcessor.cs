@@ -1,6 +1,7 @@
+using Dither.DitherStrategy;
 using Dither.Quantizers;
 
-namespace Dither.DitherStrategy;
+namespace Dither.Processors;
 
 public class BaseProcessor : IProcessor
 {

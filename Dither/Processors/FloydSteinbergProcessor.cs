@@ -1,7 +1,7 @@
-using System.Drawing;
+using Dither.DitherStrategy;
 using Dither.Quantizers;
 
-namespace Dither.DitherStrategy;
+namespace Dither.Processors;
 
 public class FloydSteinbergProcessor : IProcessor
 {
