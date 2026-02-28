@@ -1,8 +1,14 @@
 # Dithering
 
-.NET implementation of dithring
+.NET implementation of dithering
 
-![preview](https://raw.githubusercontent.com/TimeBean/Dithering/refs/heads/main/Preview.png)
+<p align="left">
+  <img src="https://github.com/TimeBean/Dithering/blob/main/Examples/Bayer4x4PalettePico8.png?raw=true" height="120"/>
+  <img src="https://github.com/TimeBean/Dithering/blob/main/Examples/Bayer8x8PaletteObraDinnIBM.png?raw=true" height="120"/>
+  <img src="https://github.com/TimeBean/Dithering/blob/main/Examples/StuckiLinear8x.png?raw=true" height="120"/>
+</p>
+
+More examples can be found in ```Examples/```
 
 ## Usage
 
