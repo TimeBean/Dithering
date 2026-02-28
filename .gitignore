@@ -13,7 +13,9 @@ riderModule.iml
 *.ipr
 *.iws
 
+# Project
 DitherConsole/Palettes/
+!DitherConsole/Palettes/1bit-monitor-glow.hex
 
 # Build output
 **/bin/

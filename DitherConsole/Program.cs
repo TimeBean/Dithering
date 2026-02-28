@@ -67,10 +67,7 @@ namespace DitherConsole
             var quantizers = new (string Name, IQuantizer Quantizer)[]
             {
                 (Name: "Linear_2x", Quantizer: new LinearQuantizer(2)),
-                (Name: "Linear_4x", Quantizer: new LinearQuantizer(4)),
-                (Name: "Linear_8x", Quantizer: new LinearQuantizer(8)),
-                (Name: "Grayscale_One_Bit", Quantizer: new OneBitQuantizer(true)),
-                (Name: "Colored_One_Bit", Quantizer: new OneBitQuantizer(false)),
+                (Name: "Linear_8x", Quantizer: new LinearQuantizer(8))
             };
 
             quantizers = quantizers
