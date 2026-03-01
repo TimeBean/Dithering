@@ -38,7 +38,7 @@ namespace DitherConsole
             using var input = File.OpenRead(@"Examples/Mirana.png");
             //using var input = File.OpenRead(@"Examples/Vanko.jpg");
 
-            using var originalBitmap = SKBitmap.Decode(input);
+            using var originalBitmap = SKBitmap.Decode(input);  
 
             var width = originalBitmap.Width;
             var height = originalBitmap.Height;
