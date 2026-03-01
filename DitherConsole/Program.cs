@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
+using Dither;
 using Dither.Processors;
 using Dither.Processors.ErrorDiffusionProcessors;
 using Dither.Processors.OrderedProcessors;
 using Dither.Quantizers;
+using Dither.Quantizers.Palette;
 using SkiaSharp;
 
 namespace DitherConsole
@@ -31,6 +33,8 @@ namespace DitherConsole
 
         private static void Main()
         {
+            var totalStopwatch = Stopwatch.StartNew();
+            
             using var input = File.OpenRead(@"Examples/Mirana.png");
             //using var input = File.OpenRead(@"Examples/Vanko.jpg");
 
@@ -51,8 +55,9 @@ namespace DitherConsole
                 Directory.CreateDirectory("Out");
             }
 
-            var processors = new (string Name, Func<IProcessor> Create)[]
+            var processors = new (string Name, Func<IProcessor> Processor)[]
             {
+                ("Original", () => new OriginalProcessor(width, height, rowBytes, bpp)),
                 ("Base", () => new BaseProcessor(width, height, rowBytes, bpp)),
                 ("Atkinson", () => new AtkinsonProcessor(width, height, rowBytes, bpp)),
                 ("Burkes", () => new BurkesProcessor(width, height, rowBytes, bpp)),
@@ -76,16 +81,22 @@ namespace DitherConsole
             var palettes = new PaletteCaster().ParsePalettes();
 
             var quantizers = new (string Name, IQuantizer Quantizer)[]
-            {
-                (Name: "Linear_2x", Quantizer: new LinearQuantizer(2)),
-                (Name: "Linear_8x", Quantizer: new LinearQuantizer(8))
-            };
-
-            quantizers = quantizers
-                .Concat(palettes.Select(p =>
-                    (Name: $"Palette {p.Name} ({p.ColorCount})", Quantizer: (IQuantizer)new PaletteQuantizer(p.Data))))
+                {
+                    (Name: "Linear_2x", Quantizer: new LinearQuantizer(2)),
+                    (Name: "Linear_8x", Quantizer: new LinearQuantizer(8))
+                }
+                .Concat(palettes.SelectMany(p => new (string, IQuantizer)[]
+                {
+                    ($"Euclidean {p.Name} ({p.ColorCount})", new EuclideanPaletteQuantizer(p.Data)),
+                    ($"Manhattan {p.Name} ({p.ColorCount})", new ManhattanPaletteQuantizer(p.Data)),
+                    ($"Linear Euclidean {p.Name} ({p.ColorCount})", new LinearEuclideanPaletteQuantizer(p.Data)),
+                    ($"Weighted {p.Name} ({p.ColorCount})", new WeightedPaletteQuantizer(p.Data)),
+                    ($"Cie76 palette {p.Name} ({p.ColorCount})", new Cie76PaletteQuantizer(p.Data)),
+                    ($"Oklab palette {p.Name} ({p.ColorCount})", new OklabPaletteQuantizer(p.Data)),
+                    ($"Ciede2000 palette {p.Name} ({p.ColorCount})", new Ciede2000PaletteQuantizer(p.Data))
+                }))
                 .ToArray();
-
+            
             using var compilationBitmap = new SKBitmap(width * quantizers.Length, height * processors.Length);
             using var canvas = new SKCanvas(compilationBitmap);
             canvas.Clear(SKColors.Black);
@@ -111,8 +122,8 @@ namespace DitherConsole
                     using var currentBitmap = originalBitmap.Copy();
                     var pixelSpan = currentBitmap.GetPixelSpan();
 
-                    var processor = processorDef.Create();
-                    var dithered = processor.Process(pixelSpan, quantizerDef.Quantizer);
+                    var processor = processorDef.Processor();
+                    var dithered = processor.Process(pixelSpan, quantizerDef.Item2);
 
                     dithered.CopyTo(pixelSpan);
 
@@ -121,33 +132,41 @@ namespace DitherConsole
                     canvas.DrawBitmap(currentBitmap, xPosition, yPosition);
 
                     var processorText = processorDef.Name.Replace("_", " ");
-                    var quantizerText = quantizerDef.Name.Replace("_", " ");
+                    var quantizerText = quantizerDef.Item1.Replace("_", " ");
 
                     const int topOffset = 2;
                     const int leftOffset = 4;
 
                     if (IsDebug)
                     {
-                        DrawText(canvas, $"processor: {processorText}", xPosition + leftOffset,
-                            yPosition + topOffset + fontSize);
-                        DrawText(canvas, $"quantizer: {quantizerText}", xPosition + leftOffset,
-                            yPosition + topOffset + fontSize + 4 + fontSize);
-                        DrawText(canvas, $"output colors: {dithered.GetColorCount()}", xPosition + leftOffset,
-                            yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize);
-
-                        /*if (quantizers[qIndex].Quantizer.GetType() == typeof(PaletteQuantizer))
+                        if (processors[pIndex].Name == "Original")
                         {
-                            DrawPalette(canvas, ((PaletteQuantizer)quantizers[qIndex].Quantizer).Palette, xPosition + leftOffset,
-                                yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize + fontSize);
+                            DrawText(canvas, $"colors: {dithered.GetColorCount()}", xPosition + leftOffset,
+                                yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize);
                         }
-                        
-                        DrawPalette(canvas, dithered.GetUniqueColors(), xPosition + leftOffset,
-                            yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize + fontSize + 12);*/
+                        else
+                        {
+                            DrawText(canvas, $"processor: {processorText}", xPosition + leftOffset,
+                                yPosition + topOffset + fontSize);
+                            DrawText(canvas, $"quantizer: {quantizerText}", xPosition + leftOffset,
+                                yPosition + topOffset + fontSize + 4 + fontSize);
+                            DrawText(canvas, $"output colors: {dithered.GetColorCount()}", xPosition + leftOffset,
+                                yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize);
+
+                            if (quantizers[qIndex].Item2.GetType() == typeof(PaletteQuantizer))
+                            {
+                                DrawPalette(canvas, ((PaletteQuantizer)quantizers[qIndex].Item2).Palette, xPosition + leftOffset,
+                                    yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize + fontSize, width);
+                            }
+
+                            DrawPalette(canvas, dithered.GetUniqueColors(), xPosition + leftOffset,
+                                yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize + fontSize + 12, width);
+                        }
                     }
 
                     perAlgorithmStopwatch.Start();
 
-                    var fileName = $"Out/{processorDef.Name}_{quantizerDef.Name}.png";
+                    var fileName = $"Out/{processorDef.Name}_{quantizerDef.Item1}.png";
                     SaveBitmap(currentBitmap, fileName);
 
                     perAlgorithmStopwatch.Stop();
@@ -163,6 +182,10 @@ namespace DitherConsole
             SaveBitmap(compilationBitmap, compilationFileName);
             Console.WriteLine(
                 $"\nCompilation generated: {compilationFileName} ({millis} ms for {imagesCount} images i.e. {Math.Round(millis / (float)imagesCount, 2)} ms for image)");
+
+            totalStopwatch.Stop();
+            
+            Console.WriteLine($"Total elapsed: {totalStopwatch.ElapsedMilliseconds} ms");
         }
         
         private static void DrawText(SKCanvas canvas, string text, int xPosition, int yPosition)
@@ -171,42 +194,50 @@ namespace DitherConsole
             canvas.DrawText(text, xPosition, yPosition, Font, TextPaint);
         }
         
-        private static void DrawPalette(SKCanvas canvas, float[,] palette, int xPosition, int yPosition)
+        private static void DrawPalette(SKCanvas canvas, float[,] palette, int xPosition, int yPosition, int width)
         {
             var colorCount = palette.GetColorCount();
-            
-            if (colorCount <= 0) 
+            if (colorCount <= 0)
                 return;
 
             var colors = palette.ToSkColors();
 
             const int cellWidth = 8;
             const int cellHeight = 8;
-            const int border = 1; 
+            const int border = 1;
 
-            var totalWidth = border * 2 + colorCount * cellWidth;
-            const int totalHeight = border * 2 + cellHeight;
+            var availableForCells = Math.Max(1, width - border * 2);
+
+            var maxPerRow = Math.Max(1, availableForCells / cellWidth);
+
+            var colsInFirstRow = Math.Min(colorCount, maxPerRow);
+
+            var rows = (colorCount + maxPerRow - 1) / maxPerRow;
+
+            var totalWidth = border * 2 + colsInFirstRow * cellWidth;
+            var totalHeight = border * 2 + rows * cellHeight;
 
             using var bgPaint = new SKPaint();
             bgPaint.Style = SKPaintStyle.Fill;
             bgPaint.Color = SKColors.Purple;
-            
+
             canvas.DrawRect(xPosition, yPosition, totalWidth, totalHeight, bgPaint);
 
             using var fillPaint = new SKPaint();
             fillPaint.Style = SKPaintStyle.Fill;
             fillPaint.IsAntialias = true;
-            
+
             for (var i = 0; i < colorCount; i++)
             {
+                var row = i / maxPerRow;
+                var col = i % maxPerRow;
+
                 fillPaint.Color = colors[i];
-                canvas.DrawRect(
-                    xPosition + border + i * cellWidth,
-                    yPosition + border,
-                    cellWidth,
-                    cellHeight,
-                    fillPaint
-                );
+
+                var x = xPosition + border + col * cellWidth;
+                var y = yPosition + border + row * cellHeight;
+
+                canvas.DrawRect(x, y, cellWidth, cellHeight, fillPaint);
             }
         }
 
