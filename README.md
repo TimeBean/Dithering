@@ -8,6 +8,8 @@
   <img src="https://github.com/TimeBean/Dithering/blob/main/Examples/StuckiLinear8x.png?raw=true" height="120"/>
 </p>
 
+[All variant preview](https://github.com/TimeBean/Dithering/blob/main/Examples/Preview.png)
+
 More examples can be found in ```Examples/```
 
 ## Usage
