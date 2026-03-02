@@ -18,7 +18,5 @@ public class OriginalProcessor : IProcessor
     public int BytesPerPixel { get; }
 
     public Span<byte> Process(Span<byte> pixels, IQuantizer quantizer)
-    {
-        return pixels;
-    }
+        => pixels;
 }
