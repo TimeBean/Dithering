@@ -18,10 +18,7 @@ public abstract class PaletteQuantizer : IQuantizer
 
         for (var i = 0; i < pixels.Length; i += colorCount)
         {
-            var nearestIndex = GetNearestColorIndex(
-                pixels[i],
-                pixels[i + 1],
-                pixels[i + 2]);
+            var nearestIndex = GetNearestColorIndex(pixels[i], pixels[i + 1], pixels[i + 2]);
 
             result[i] = Palette[nearestIndex, 0];
             result[i + 1] = Palette[nearestIndex, 1];
