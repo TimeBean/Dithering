@@ -19,7 +19,7 @@ public abstract class ErrorDiffusionProcessor : IProcessor
     public int RowBytes { get; protected init; }
     public int BytesPerPixel { get; protected init; }
 
-    public Span<byte> Process(Span<byte> pixels, IQuantizer quantizer)
+    public void Process(ref Span<byte> pixels, IQuantizer quantizer)
     {
         for (var y = 0; y < Height; y++)
         {
@@ -50,7 +50,5 @@ public abstract class ErrorDiffusionProcessor : IProcessor
                 }
             }
         }
-
-        return pixels;
     }
 }

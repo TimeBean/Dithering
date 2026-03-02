@@ -2,7 +2,7 @@ using Dither.Quantizers;
 
 namespace Dither.Processors.NonDitherProcessors;
 
-public class OriginalProcessor : IProcessor
+public sealed class OriginalProcessor : IProcessor
 {
     public OriginalProcessor(int width, int height, int rowBytes, int bytesPerPixel)
     {
@@ -17,6 +17,5 @@ public class OriginalProcessor : IProcessor
     public int RowBytes { get; }
     public int BytesPerPixel { get; }
 
-    public Span<byte> Process(Span<byte> pixels, IQuantizer quantizer)
-        => pixels;
+    public void Process(ref Span<byte> pixels, IQuantizer quantizer) { }
 }

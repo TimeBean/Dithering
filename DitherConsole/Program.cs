@@ -124,9 +124,7 @@ namespace DitherConsole
                     var pixelSpan = currentBitmap.GetPixelSpan();
 
                     var processor = processorDef.Processor();
-                    var dithered = processor.Process(pixelSpan, quantizerDef.Item2);
-
-                    dithered.CopyTo(pixelSpan);
+                    processor.Process(ref pixelSpan, quantizerDef.Item2);
 
                     canvas.DrawBitmap(currentBitmap, xPosition, yPosition);
 
@@ -140,7 +138,7 @@ namespace DitherConsole
                     {
                         if (processors[pIndex].Name == "Original")
                         {
-                            DrawText(canvas, $"colors: {dithered.GetUniqueColorCount()}", xPosition + leftOffset,
+                            DrawText(canvas, $"colors: {pixelSpan.GetUniqueColorCount()}", xPosition + leftOffset,
                                 yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize);
                         }
                         else
@@ -149,7 +147,7 @@ namespace DitherConsole
                                 yPosition + topOffset + FontSize);
                             DrawText(canvas, $"quantizer: {quantizerText}", xPosition + leftOffset,
                                 yPosition + topOffset + FontSize + 4 + FontSize);
-                            DrawText(canvas, $"output colors: {dithered.GetUniqueColorCount()}", xPosition + leftOffset,
+                            DrawText(canvas, $"output colors: {pixelSpan.GetUniqueColorCount()}", xPosition + leftOffset,
                                 yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize);
 
                             if (quantizers[qIndex].Item2.GetType() == typeof(PaletteQuantizer))
@@ -159,7 +157,7 @@ namespace DitherConsole
                                     yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize + FontSize, width);
                             }
 
-                            DrawPalette(canvas, dithered.GetPalette(), xPosition + leftOffset,
+                            DrawPalette(canvas, pixelSpan.GetPalette(), xPosition + leftOffset,
                                 yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize + FontSize + 12, width);
                         }
                     }

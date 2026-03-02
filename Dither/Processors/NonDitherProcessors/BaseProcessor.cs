@@ -17,7 +17,7 @@ public class BaseProcessor : IProcessor
     public int RowBytes { get; }
     public int BytesPerPixel { get; }
 
-    public Span<byte> Process(Span<byte> pixels, IQuantizer quantizer)
+    public void Process(ref Span<byte> pixels, IQuantizer quantizer)
     {
         for (var y = 0; y < Height; y++)
         {
@@ -43,7 +43,5 @@ public class BaseProcessor : IProcessor
                 }
             }
         }
-        
-        return pixels;
     }
 }
