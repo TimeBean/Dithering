@@ -11,31 +11,43 @@ namespace DitherConsole
     // ReSharper disable once ClassNeverInstantiated.Global
     internal class Program
     {
-        private static readonly SKPaint TextPaint = new()
-        {
-            Color = SKColors.GhostWhite,
-            IsAntialias = true
-        };
-
-        private static readonly SKPaint ShadowPaint = new()
-        {
-            Color = SKColors.Black,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 4f,
-            MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 2f)
-        };
+        private static SKPaint _textPaint = null!;
+        private static SKPaint _shadowPaint = null!;
 
         private static readonly SKFont Font = new(SKTypeface.Default, 14f);
         private static readonly int FontSize = Convert.ToInt32(Font.Size);
 
-        private const bool IsDebug = true;
+        private static bool _isDebug = true;
 
-        private static void Main()
+        private static void Main(string[] args)
         {
+            foreach (var arg in args)
+            {
+                if (arg.Contains("--debug"))
+                    _isDebug = true;
+            }
+
+            if (_isDebug)
+            {
+                _textPaint = new SKPaint
+                {
+                    Color = SKColors.GhostWhite,
+                    IsAntialias = true
+                };
+
+                _shadowPaint = new SKPaint
+                {
+                    Color = SKColors.Black,
+                    IsAntialias = true,
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 4f,
+                    MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 2f)
+                };
+            }
+
             using var input = File.OpenRead(@"Examples/Mirana.png");
 
-            using var originalBitmap = SKBitmap.Decode(input);  
+            using var originalBitmap = SKBitmap.Decode(input);
 
             var width = originalBitmap.Width;
             var height = originalBitmap.Height;
@@ -93,7 +105,7 @@ namespace DitherConsole
                     ($"Ciede2000 palette {p.Name} ({p.ColorCount})", new Ciede2000PaletteQuantizer(p.Data))
                 }))
                 .ToArray();
-            
+
             using var compilationBitmap = new SKBitmap(width * quantizers.Length, height * processors.Length);
             using var canvas = new SKCanvas(compilationBitmap);
             canvas.Clear(SKColors.Black);
@@ -124,7 +136,7 @@ namespace DitherConsole
                     const int topOffset = 2;
                     const int leftOffset = 4;
 
-                    if (IsDebug)
+                    if (_isDebug)
                     {
                         if (processors[pIndex].Name == "Original")
                         {
@@ -142,7 +154,8 @@ namespace DitherConsole
 
                             if (quantizers[qIndex].Item2.GetType() == typeof(PaletteQuantizer))
                             {
-                                DrawPalette(canvas, ((PaletteQuantizer)quantizers[qIndex].Item2).Palette, xPosition + leftOffset,
+                                DrawPalette(canvas, ((PaletteQuantizer)quantizers[qIndex].Item2).Palette,
+                                    xPosition + leftOffset,
                                     yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize + FontSize, width);
                             }
 
@@ -153,25 +166,25 @@ namespace DitherConsole
 
                     var fileName = $"Out/{processorDef.Name}_{quantizerDef.Item1}.png";
                     SaveBitmap(currentBitmap, fileName);
-                    
+
                     Console.WriteLine($"[{DateTime.Now}] Saved {fileName}");
                 }
             }
 
             Console.WriteLine($"[{DateTime.Now}] Saving bitmap.");
-            
+
             const string compilationFileName = "Out/!CompilationGrid.png";
             SaveBitmap(compilationBitmap, compilationFileName);
-            
+
             Console.WriteLine($"[{DateTime.Now}] Done.");
         }
-        
+
         private static void DrawText(SKCanvas canvas, string text, int xPosition, int yPosition)
         {
-            canvas.DrawText(text, xPosition + 2, yPosition + 1, Font, ShadowPaint);
-            canvas.DrawText(text, xPosition, yPosition, Font, TextPaint);
+            canvas.DrawText(text, xPosition + 2, yPosition + 1, Font, _shadowPaint);
+            canvas.DrawText(text, xPosition, yPosition, Font, _textPaint);
         }
-        
+
         private static void DrawPalette(SKCanvas canvas, float[,] palette, int xPosition, int yPosition, int width)
         {
             var colorCount = palette.GetUniqueColorCount();
