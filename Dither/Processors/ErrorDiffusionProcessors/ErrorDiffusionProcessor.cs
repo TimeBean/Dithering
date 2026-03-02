@@ -4,6 +4,8 @@ namespace Dither.Processors.ErrorDiffusionProcessors;
 
 public abstract class ErrorDiffusionProcessor : IProcessor
 {
+    protected abstract void DistributeError(Span<byte> pixels, int x, int y, int channel, double error);
+    
     protected ErrorDiffusionProcessor(int width, int height, int rowBytes, int bytesPerPixel)
     {
         Width = width;
@@ -20,32 +22,32 @@ public abstract class ErrorDiffusionProcessor : IProcessor
     public Span<byte> Process(Span<byte> pixels, IQuantizer quantizer)
     {
         for (var y = 0; y < Height; y++)
-        for (var x = 0; x < Width; x++)
         {
-            var baseIndex = y * RowBytes + x * BytesPerPixel;
-
-            var newValues = new List<float>();
-
-            for (var c = 0; c < 3; c++) newValues.Add(pixels[baseIndex + c]);
-
-            var quantizedColors = quantizer.Quantize(newValues.ToArray());
-
-            for (var c = 0; c < 3; c++)
+            for (var x = 0; x < Width; x++)
             {
-                var index = baseIndex + c;
+                var baseIndex = y * RowBytes + x * BytesPerPixel;
 
-                var oldValue = pixels[index];
-                var newValue = quantizedColors[c];
+                var newValues = new List<float>();
 
-                var error = oldValue - newValue;
-                pixels[index] = (byte)Math.Round(newValue);
+                for (var c = 0; c < 3; c++) newValues.Add(pixels[baseIndex + c]);
 
-                DistributeError(pixels, x, y, c, error);
+                var quantizedColors = quantizer.Quantize(newValues.ToArray());
+
+                for (var c = 0; c < 3; c++)
+                {
+                    var index = baseIndex + c;
+
+                    var oldValue = pixels[index];
+                    var newValue = quantizedColors[c];
+
+                    var error = oldValue - newValue;
+                    pixels[index] = (byte)Math.Round(newValue);
+
+                    DistributeError(pixels, x, y, c, error);
+                }
             }
         }
 
         return pixels;
     }
-
-    protected abstract void DistributeError(Span<byte> pixels, int x, int y, int channel, double error);
 }
