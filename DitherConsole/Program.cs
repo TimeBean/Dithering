@@ -1,4 +1,5 @@
-﻿using Dither.Processors;
+﻿using System.Diagnostics;
+using Dither.Processors;
 using Dither.Processors.ErrorDiffusionProcessors;
 using Dither.Processors.NonDitherProcessors;
 using Dither.Processors.OrderedProcessors;
@@ -17,14 +18,24 @@ namespace DitherConsole
         private static readonly SKFont Font = new(SKTypeface.Default, 14f);
         private static readonly int FontSize = Convert.ToInt32(Font.Size);
 
+        private const string Path = "Out";
+
         private static bool _isDebug = true;
 
         private static void Main(string[] args)
         {
+            var totalProcessingTime = Stopwatch.StartNew();
+            long algorithmProcessingTime = 0;
+            var algorithmCount = 0;
+
             foreach (var arg in args)
             {
                 if (arg.Contains("--debug"))
+                {
+                    Log("Dither", "Debug enable", ConsoleColor.Yellow);
+
                     _isDebug = true;
+                }
             }
 
             if (_isDebug)
@@ -54,14 +65,16 @@ namespace DitherConsole
             var rowBytes = originalBitmap.RowBytes;
             var bpp = originalBitmap.BytesPerPixel;
 
-            if (!Directory.Exists("Out"))
+            if (!Directory.Exists(Path))
             {
+                Log("Dither", $"{Path}/ doesn't exists, creating...");
                 Directory.CreateDirectory("Out");
             }
             else
             {
-                Directory.Delete("Out", true);
-                Directory.CreateDirectory("Out");
+                Log("Dither", $"{Path}/ exists, deleting and creating...");
+                Directory.Delete($"{Path}", true);
+                Directory.CreateDirectory($"{Path}");
             }
 
             var processors = new (string Name, Func<IProcessor> Processor)[]
@@ -124,9 +137,19 @@ namespace DitherConsole
                     var pixelSpan = currentBitmap.GetPixelSpan();
 
                     var processor = processorDef.Processor();
-                    processor.Process(ref pixelSpan, quantizerDef.Item2);
 
+                    Log("Processor", $"Processing dither...");
+                    var processorStopwatch = Stopwatch.StartNew();
+                    processor.Process(ref pixelSpan, quantizerDef.Item2);
+                    processorStopwatch.Stop();
+                    algorithmProcessingTime += processorStopwatch.ElapsedMilliseconds;
+                    algorithmCount++;
+                    Log("Processor", $"Processed dither in {processorStopwatch.ElapsedMilliseconds} ms",
+                        ConsoleColor.Green);
+
+                    Log("Canvas", $"Drawing dithered...");
                     canvas.DrawBitmap(currentBitmap, xPosition, yPosition);
+                    Log("Canvas", $"Ditherd added to canvas", ConsoleColor.Green);
 
                     var processorText = processorDef.Name.Replace("_", " ");
                     var quantizerText = quantizerDef.Item1.Replace("_", " ");
@@ -136,6 +159,8 @@ namespace DitherConsole
 
                     if (_isDebug)
                     {
+                        Log("Canvas", $"Add debug info to image", ConsoleColor.Yellow);
+
                         if (processors[pIndex].Name == "Original")
                         {
                             DrawText(canvas, $"colors: {pixelSpan.GetUniqueColorCount()}", xPosition + leftOffset,
@@ -147,7 +172,8 @@ namespace DitherConsole
                                 yPosition + topOffset + FontSize);
                             DrawText(canvas, $"quantizer: {quantizerText}", xPosition + leftOffset,
                                 yPosition + topOffset + FontSize + 4 + FontSize);
-                            DrawText(canvas, $"output colors: {pixelSpan.GetUniqueColorCount()}", xPosition + leftOffset,
+                            DrawText(canvas, $"output colors: {pixelSpan.GetUniqueColorCount()}",
+                                xPosition + leftOffset,
                                 yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize);
 
                             if (quantizers[qIndex].Item2.GetType() == typeof(PaletteQuantizer))
@@ -162,19 +188,40 @@ namespace DitherConsole
                         }
                     }
 
-                    var fileName = $"Out/{processorDef.Name}_{quantizerDef.Item1}.png";
+                    var fileName = $"Out/{processorDef.Name}_{quantizerDef.Item1}.png".Replace(" ", "_")
+                        .Replace("_", "")
+                        .Replace("(", "-")
+                        .Replace(")", "");
+
                     SaveBitmap(currentBitmap, fileName);
 
-                    Console.WriteLine($"[{DateTime.Now}] Saved {fileName}");
+                    Log("Algorithm", $"Saved {fileName}");
                 }
             }
 
-            Console.WriteLine($"[{DateTime.Now}] Saving bitmap.");
+            Log("Grid", "Saving bitmap...");
 
             const string compilationFileName = "Out/!CompilationGrid.png";
             SaveBitmap(compilationBitmap, compilationFileName);
 
-            Console.WriteLine($"[{DateTime.Now}] Done.");
+            totalProcessingTime.Stop();
+            Log("Dither", $"{algorithmCount} algorithms done in {algorithmProcessingTime} ms ({algorithmProcessingTime / (float)algorithmCount} ms)", ConsoleColor.Green);
+            Log("Dither", $"Done in {totalProcessingTime.ElapsedMilliseconds} ms", ConsoleColor.Green);
+        }
+
+        private static void Log(string point, string message, ConsoleColor? color = null)
+        {
+            if (color.HasValue)
+            {
+                Console.ForegroundColor = (ConsoleColor)color;
+            }
+
+            Console.WriteLine($"[{DateTime.Now}] [{point}] {message}");
+
+            if (color.HasValue)
+            {
+                Console.ResetColor();
+            }
         }
 
         private static void DrawText(SKCanvas canvas, string text, int xPosition, int yPosition)
@@ -187,7 +234,9 @@ namespace DitherConsole
         {
             var colorCount = palette.GetUniqueColorCount();
             if (colorCount <= 0)
+            {
                 return;
+            }
 
             var colors = palette.ToSkColors();
 
