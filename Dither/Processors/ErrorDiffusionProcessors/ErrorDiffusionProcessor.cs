@@ -29,7 +29,10 @@ public abstract class ErrorDiffusionProcessor : IProcessor
 
                 var newValues = new List<float>();
 
-                for (var c = 0; c < 3; c++) newValues.Add(pixels[baseIndex + c]);
+                for (var c = 0; c < 3; c++)
+                {
+                    newValues.Add(pixels[baseIndex + c]);
+                }
 
                 var quantizedColors = quantizer.Quantize(newValues.ToArray());
 

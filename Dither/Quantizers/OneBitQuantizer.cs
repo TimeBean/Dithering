@@ -15,7 +15,10 @@ public class OneBitQuantizer : IQuantizer
         {
             var average = pixels.Average();
 
-            for (var i = 0; i < pixels.Length; i++) pixels[i] = average < 128 ? 0 : 255;
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = average < 128 ? 0 : 255;
+            }
         }
         else
         {

@@ -14,7 +14,9 @@ public class LinearQuantizer : IQuantizer
     public float[] Quantize(float[] pixels)
     {
         if (Levels is <= 1 or >= 256)
+        {
             throw new WrongLevelQuantityException($"Level number must be between 2 and 255, inclusive: {Levels}");
+        }
 
         var newPixels = new List<float>();
 
