@@ -28,13 +28,19 @@ public sealed class StuckiProcessor : ErrorDiffusionProcessor
     private void Add(Span<byte> pixels, int nx, int ny, int channel, double error, double factor)
     {
         if (nx < 0 || nx >= Width || ny < 0 || ny >= Height)
+        {
             return;
+        }
 
         var idx = ny * RowBytes + nx * BytesPerPixel + channel;
         var value = pixels[idx] + error * factor;
 
-        if (value > 255) value = 255;
-        if (value < 0) value = 0;
+        value = value switch
+        {
+            < 0 => 0,
+            > 255 => 255,
+            _ => value
+        };
 
         pixels[idx] = (byte)Math.Round(value);
     }
