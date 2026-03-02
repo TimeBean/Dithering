@@ -1,8 +1,12 @@
 namespace Dither.Exceptions;
 
-public class WrongLevelQuantityException : Exception
+public sealed class WrongLevelQuantityException : Exception
 {
-    public WrongLevelQuantityException() { }
+    public WrongLevelQuantityException()
+    {
+    }
 
-    public WrongLevelQuantityException(string message) : base(message) { }
+    public WrongLevelQuantityException(string message) : base(message)
+    {
+    }
 }

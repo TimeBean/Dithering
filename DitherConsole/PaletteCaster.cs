@@ -2,9 +2,9 @@ using System.Globalization;
 
 namespace DitherConsole;
 
-public class PaletteCaster
+public static class PaletteCaster
 {
-    public Palette[] ParsePalettes()
+    public static Palette[] ParsePalettes()
     {
         const string path = @"Palettes/";
 
@@ -32,7 +32,7 @@ public class PaletteCaster
         return palettes.ToArray();
     }
 
-    private float[,] ParsePaletteFile(string filePath)
+    private static float[,] ParsePaletteFile(string filePath)
     {
         var lines = File.ReadAllLines(filePath)
             .Select(l => l.Trim())

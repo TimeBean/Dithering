@@ -7,7 +7,7 @@ public static class ColorExtension
 {
     extension(Span<byte> pixels)
     {
-        public int GetColorCount()
+        public int GetUniqueColorCount()
         {
             var colors = MemoryMarshal.Cast<byte, SKColor>(pixels);
 
@@ -18,7 +18,7 @@ public static class ColorExtension
             return set.Count;
         }
         
-        public float[,] GetUniqueColors()
+        public float[,] GetPalette()
         {
             if (pixels.Length % 4 != 0)
                 throw new ArgumentException("Pixel span length must be divisible by 4 (BGRA).");
@@ -53,7 +53,7 @@ public static class ColorExtension
 
     extension(float[,] palette)
     {
-        public int GetColorCount()
+        public int GetUniqueColorCount()
         {
             var rows = palette.GetLength(0);
             var cols = palette.GetLength(1);

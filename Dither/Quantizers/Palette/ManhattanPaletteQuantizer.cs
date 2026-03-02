@@ -1,10 +1,12 @@
 namespace Dither.Quantizers.Palette;
 
-public class ManhattanPaletteQuantizer : PaletteQuantizer
+public sealed class ManhattanPaletteQuantizer : PaletteQuantizer
 {
-    public ManhattanPaletteQuantizer(float[,] palette) : base(palette) { }
+    public ManhattanPaletteQuantizer(float[,] palette) : base(palette)
+    {
+    }
 
-    protected override int GetNearestColorIndex(float r, float g, float b)
+    protected override int GetNearestColorIndex(float red, float green, float blue)
     {
         var nearestIndex = 0;
         var minDistance = float.MaxValue;
@@ -12,9 +14,9 @@ public class ManhattanPaletteQuantizer : PaletteQuantizer
 
         for (var j = 0; j < paletteSize; j++)
         {
-            var dr = Math.Abs(r - Palette[j, 0]);
-            var dg = Math.Abs(g - Palette[j, 1]);
-            var db = Math.Abs(b - Palette[j, 2]);
+            var dr = Math.Abs(red - Palette[j, 0]);
+            var dg = Math.Abs(green - Palette[j, 1]);
+            var db = Math.Abs(blue - Palette[j, 2]);
 
             var distance = dr + dg + db;
 

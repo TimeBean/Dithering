@@ -4,14 +4,9 @@ namespace Dither.Processors.OrderedProcessors;
 
 public class OrderedProcessor : IProcessor
 {
-    public int Width { get; }
-    public int Height { get; }
-    public int RowBytes { get; }
-    public int BytesPerPixel { get; }
-
     private readonly int[,] _matrix;
-    private readonly int _matrixSize;
     private readonly int _matrixCells;
+    private readonly int _matrixSize;
 
     public OrderedProcessor(int width, int height, int rowBytes, int bytesPerPixel, int[,] matrix)
     {
@@ -24,6 +19,11 @@ public class OrderedProcessor : IProcessor
         _matrixSize = matrix.GetLength(0);
         _matrixCells = _matrixSize * _matrixSize;
     }
+
+    public int Width { get; }
+    public int Height { get; }
+    public int RowBytes { get; }
+    public int BytesPerPixel { get; }
 
     public Span<byte> Process(Span<byte> pixels, IQuantizer quantizer)
     {
@@ -41,7 +41,7 @@ public class OrderedProcessor : IProcessor
 
                 var m = _matrix[my, mx];
 
-                var offset = ((2 * m + 1) * 255) / (2 * _matrixCells) - 127;
+                var offset = (2 * m + 1) * 255 / (2 * _matrixCells) - 127;
 
                 var r = pixels[px + 0] + offset;
                 var g = pixels[px + 1] + offset;

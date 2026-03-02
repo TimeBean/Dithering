@@ -37,9 +37,6 @@
       <None Update="Palettes\zx-spectrum.hex">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Examples\Vanko.jpg">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
       <None Update="Palettes\1bit-monitor-glow.hex">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

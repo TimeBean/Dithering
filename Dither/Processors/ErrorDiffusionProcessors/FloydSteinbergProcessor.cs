@@ -1,15 +1,17 @@
 namespace Dither.Processors.ErrorDiffusionProcessors;
 
-public class FloydSteinbergProcessor : ErrorDiffusionProcessor
+public sealed class FloydSteinbergProcessor : ErrorDiffusionProcessor
 {
     public FloydSteinbergProcessor(int width, int height, int rowBytes, int bytesPerPixel)
-        : base(width, height, rowBytes, bytesPerPixel) { }
+        : base(width, height, rowBytes, bytesPerPixel)
+    {
+    }
 
     protected override void DistributeError(Span<byte> pixels, int x, int y, int channel, double error)
     {
-        Add(pixels, x + 1, y,     channel, error, 7.0 / 16.0);
+        Add(pixels, x + 1, y, channel, error, 7.0 / 16.0);
         Add(pixels, x - 1, y + 1, channel, error, 3.0 / 16.0);
-        Add(pixels, x,     y + 1, channel, error, 5.0 / 16.0);
+        Add(pixels, x, y + 1, channel, error, 5.0 / 16.0);
         Add(pixels, x + 1, y + 1, channel, error, 1.0 / 16.0);
     }
 

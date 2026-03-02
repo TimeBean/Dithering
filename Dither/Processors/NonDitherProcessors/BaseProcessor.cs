@@ -1,10 +1,10 @@
 using Dither.Quantizers;
 
-namespace Dither.Processors.ErrorDiffusionProcessors;
+namespace Dither.Processors.NonDitherProcessors;
 
-public abstract class ErrorDiffusionProcessor : IProcessor
+public class BaseProcessor : IProcessor
 {
-    protected ErrorDiffusionProcessor(int width, int height, int rowBytes, int bytesPerPixel)
+    public BaseProcessor(int width, int height, int rowBytes, int bytesPerPixel)
     {
         Width = width;
         Height = height;
@@ -12,10 +12,10 @@ public abstract class ErrorDiffusionProcessor : IProcessor
         BytesPerPixel = bytesPerPixel;
     }
 
-    public int Width { get; protected init; }
-    public int Height { get; protected init; }
-    public int RowBytes { get; protected init; }
-    public int BytesPerPixel { get; protected init; }
+    public int Width { get; }
+    public int Height { get; }
+    public int RowBytes { get; }
+    public int BytesPerPixel { get; }
 
     public Span<byte> Process(Span<byte> pixels, IQuantizer quantizer)
     {
@@ -33,19 +33,12 @@ public abstract class ErrorDiffusionProcessor : IProcessor
             for (var c = 0; c < 3; c++)
             {
                 var index = baseIndex + c;
-
-                var oldValue = pixels[index];
                 var newValue = quantizedColors[c];
 
-                var error = oldValue - newValue;
                 pixels[index] = (byte)Math.Round(newValue);
-
-                DistributeError(pixels, x, y, c, error);
             }
         }
 
         return pixels;
     }
-
-    protected abstract void DistributeError(Span<byte> pixels, int x, int y, int channel, double error);
 }

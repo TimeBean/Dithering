@@ -1,10 +1,12 @@
 namespace Dither.Quantizers.Palette;
 
-public class EuclideanPaletteQuantizer : PaletteQuantizer
+public sealed class EuclideanPaletteQuantizer : PaletteQuantizer
 {
-    public EuclideanPaletteQuantizer(float[,] palette) : base(palette) { }
+    public EuclideanPaletteQuantizer(float[,] palette) : base(palette)
+    {
+    }
 
-    protected override int GetNearestColorIndex(float r, float g, float b)
+    protected override int GetNearestColorIndex(float red, float green, float blue)
     {
         var nearestIndex = 0;
         var minDistance = float.MaxValue;
@@ -13,9 +15,9 @@ public class EuclideanPaletteQuantizer : PaletteQuantizer
 
         for (var j = 0; j < paletteSize; j++)
         {
-            var dr = r - Palette[j, 0];
-            var dg = g - Palette[j, 1];
-            var db = b - Palette[j, 2];
+            var dr = red - Palette[j, 0];
+            var dg = green - Palette[j, 1];
+            var db = blue - Palette[j, 2];
 
             var distance = dr * dr + dg * dg + db * db;
 

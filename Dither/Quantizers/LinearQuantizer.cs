@@ -4,13 +4,13 @@ namespace Dither.Quantizers;
 
 public class LinearQuantizer : IQuantizer
 {
-    private int Levels { get; set; }
-    
     public LinearQuantizer(int levels)
     {
         Levels = levels;
     }
-    
+
+    private int Levels { get; }
+
     public float[] Quantize(float[] pixels)
     {
         if (Levels is <= 1 or >= 256)
@@ -26,10 +26,10 @@ public class LinearQuantizer : IQuantizer
             if (index > levelsMinusOne) index = levelsMinusOne;
 
             var value = index * (255.0 / levelsMinusOne);
-            
+
             newPixels.Add((float)value);
         }
-        
+
         return newPixels.ToArray();
     }
 }

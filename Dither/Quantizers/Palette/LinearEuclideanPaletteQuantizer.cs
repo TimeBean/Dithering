@@ -1,22 +1,23 @@
 namespace Dither.Quantizers.Palette;
 
-public class LinearEuclideanPaletteQuantizer : PaletteQuantizer
+public sealed class LinearEuclideanPaletteQuantizer : PaletteQuantizer
 {
-    public LinearEuclideanPaletteQuantizer(float[,] palette) : base(palette) { }
+    public LinearEuclideanPaletteQuantizer(float[,] palette) : base(palette)
+    {
+    }
 
     private static float ToLinear(float c)
     {
         if (c <= 0.04045f)
             return c / 12.92f;
-        else
-            return (float)Math.Pow((c + 0.055f) / 1.055f, 2.4f);
+        return (float)Math.Pow((c + 0.055f) / 1.055f, 2.4f);
     }
 
-    protected override int GetNearestColorIndex(float r, float g, float b)
+    protected override int GetNearestColorIndex(float red, float green, float blue)
     {
-        var lr = ToLinear(r);
-        var lg = ToLinear(g);
-        var lb = ToLinear(b);
+        var lr = ToLinear(red);
+        var lg = ToLinear(green);
+        var lb = ToLinear(blue);
 
         var nearestIndex = 0;
         var minDistance = float.MaxValue;

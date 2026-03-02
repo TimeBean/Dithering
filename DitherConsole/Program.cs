@@ -1,7 +1,6 @@
-﻿using System.Diagnostics;
-using Dither;
-using Dither.Processors;
+﻿using Dither.Processors;
 using Dither.Processors.ErrorDiffusionProcessors;
+using Dither.Processors.NonDitherProcessors;
 using Dither.Processors.OrderedProcessors;
 using Dither.Quantizers;
 using Dither.Quantizers.Palette;
@@ -28,15 +27,13 @@ namespace DitherConsole
         };
 
         private static readonly SKFont Font = new(SKTypeface.Default, 14f);
+        private static readonly int FontSize = Convert.ToInt32(Font.Size);
 
         private const bool IsDebug = true;
 
         private static void Main()
         {
-            var totalStopwatch = Stopwatch.StartNew();
-            
             using var input = File.OpenRead(@"Examples/Mirana.png");
-            //using var input = File.OpenRead(@"Examples/Vanko.jpg");
 
             using var originalBitmap = SKBitmap.Decode(input);  
 
@@ -78,7 +75,7 @@ namespace DitherConsole
                 ("BlueNoise_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.BlueNoise8)),
             };
 
-            var palettes = new PaletteCaster().ParsePalettes();
+            var palettes = PaletteCaster.ParsePalettes();
 
             var quantizers = new (string Name, IQuantizer Quantizer)[]
                 {
@@ -101,16 +98,8 @@ namespace DitherConsole
             using var canvas = new SKCanvas(compilationBitmap);
             canvas.Clear(SKColors.Black);
 
-            var fontSize = Convert.ToInt32(Font.Size);
-
-            var millis = 0L;
-            var imagesCount = 0;
-
             for (var pIndex = 0; pIndex < processors.Length; pIndex++)
             {
-                var perAlgorithmStopwatch = new Stopwatch();
-                perAlgorithmStopwatch.Start();
-
                 var processorDef = processors[pIndex];
                 var yPosition = pIndex * height;
 
@@ -127,8 +116,6 @@ namespace DitherConsole
 
                     dithered.CopyTo(pixelSpan);
 
-                    perAlgorithmStopwatch.Stop();
-
                     canvas.DrawBitmap(currentBitmap, xPosition, yPosition);
 
                     var processorText = processorDef.Name.Replace("_", " ");
@@ -141,51 +128,42 @@ namespace DitherConsole
                     {
                         if (processors[pIndex].Name == "Original")
                         {
-                            DrawText(canvas, $"colors: {dithered.GetColorCount()}", xPosition + leftOffset,
-                                yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize);
+                            DrawText(canvas, $"colors: {dithered.GetUniqueColorCount()}", xPosition + leftOffset,
+                                yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize);
                         }
                         else
                         {
                             DrawText(canvas, $"processor: {processorText}", xPosition + leftOffset,
-                                yPosition + topOffset + fontSize);
+                                yPosition + topOffset + FontSize);
                             DrawText(canvas, $"quantizer: {quantizerText}", xPosition + leftOffset,
-                                yPosition + topOffset + fontSize + 4 + fontSize);
-                            DrawText(canvas, $"output colors: {dithered.GetColorCount()}", xPosition + leftOffset,
-                                yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize);
+                                yPosition + topOffset + FontSize + 4 + FontSize);
+                            DrawText(canvas, $"output colors: {dithered.GetUniqueColorCount()}", xPosition + leftOffset,
+                                yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize);
 
                             if (quantizers[qIndex].Item2.GetType() == typeof(PaletteQuantizer))
                             {
                                 DrawPalette(canvas, ((PaletteQuantizer)quantizers[qIndex].Item2).Palette, xPosition + leftOffset,
-                                    yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize + fontSize, width);
+                                    yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize + FontSize, width);
                             }
 
-                            DrawPalette(canvas, dithered.GetUniqueColors(), xPosition + leftOffset,
-                                yPosition + topOffset + fontSize + 4 + fontSize + 4 + fontSize + fontSize + 12, width);
+                            DrawPalette(canvas, dithered.GetPalette(), xPosition + leftOffset,
+                                yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize + FontSize + 12, width);
                         }
                     }
 
-                    perAlgorithmStopwatch.Start();
-
                     var fileName = $"Out/{processorDef.Name}_{quantizerDef.Item1}.png";
                     SaveBitmap(currentBitmap, fileName);
-
-                    perAlgorithmStopwatch.Stop();
-
-                    Console.WriteLine($"Generated: {fileName} ({perAlgorithmStopwatch.ElapsedMilliseconds} ms)");
-                    millis += perAlgorithmStopwatch.ElapsedMilliseconds;
-                    perAlgorithmStopwatch.Reset();
-                    imagesCount++;
+                    
+                    Console.WriteLine($"[{DateTime.Now}] Saved {fileName}");
                 }
             }
 
+            Console.WriteLine($"[{DateTime.Now}] Saving bitmap.");
+            
             const string compilationFileName = "Out/!CompilationGrid.png";
             SaveBitmap(compilationBitmap, compilationFileName);
-            Console.WriteLine(
-                $"\nCompilation generated: {compilationFileName} ({millis} ms for {imagesCount} images i.e. {Math.Round(millis / (float)imagesCount, 2)} ms for image)");
-
-            totalStopwatch.Stop();
             
-            Console.WriteLine($"Total elapsed: {totalStopwatch.ElapsedMilliseconds} ms");
+            Console.WriteLine($"[{DateTime.Now}] Done.");
         }
         
         private static void DrawText(SKCanvas canvas, string text, int xPosition, int yPosition)
@@ -196,7 +174,7 @@ namespace DitherConsole
         
         private static void DrawPalette(SKCanvas canvas, float[,] palette, int xPosition, int yPosition, int width)
         {
-            var colorCount = palette.GetColorCount();
+            var colorCount = palette.GetUniqueColorCount();
             if (colorCount <= 0)
                 return;
 

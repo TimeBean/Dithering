@@ -2,12 +2,12 @@ namespace Dither.Quantizers.Palette;
 
 public abstract class PaletteQuantizer : IQuantizer
 {
-    public float[,] Palette { get; }
-
     protected PaletteQuantizer(float[,] palette)
     {
         Palette = palette;
     }
+
+    public float[,] Palette { get; }
 
     public float[] Quantize(float[] pixels)
     {
@@ -21,7 +21,7 @@ public abstract class PaletteQuantizer : IQuantizer
                 pixels[i + 1],
                 pixels[i + 2]);
 
-            result[i]     = Palette[nearestIndex, 0];
+            result[i] = Palette[nearestIndex, 0];
             result[i + 1] = Palette[nearestIndex, 1];
             result[i + 2] = Palette[nearestIndex, 2];
         }
@@ -29,6 +29,5 @@ public abstract class PaletteQuantizer : IQuantizer
         return result;
     }
 
-    protected abstract int GetNearestColorIndex(float r, float g, float b);
-
+    protected abstract int GetNearestColorIndex(float red, float green, float blue);
 }
