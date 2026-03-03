@@ -4,10 +4,10 @@ namespace Dither.Processors;
 
 public interface IProcessor
 {
-    public int Width { get; }
-    public int Height { get; }
-    public int RowBytes { get; }
-    public int BytesPerPixel { get; }
+    int Width { get; }
+    int Height { get; }
+    int RowBytes { get; }
+    int BytesPerPixel { get; }
 
-    public void Process(ref Span<byte> pixels, IQuantizer quantizer);
+    void Process(ref Span<byte> pixels, IQuantizer quantizer);
 }

@@ -7,7 +7,7 @@
 
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>TimeBeanDithering</PackageId>
-        <Version>1.1.0</Version>
+        <Version>1.2.0</Version>
         <Authors>TimeBean</Authors>
         <Company>TimeBean</Company>
         <Description>.NET implementation of dithering</Description>

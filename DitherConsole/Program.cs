@@ -87,35 +87,35 @@ namespace DitherConsole
                 ("Jarvis-Judice-Ninke", () => new JarvisJudiceNinkeProcessor(width, height, rowBytes, bpp)),
                 ("Sierra_3_Row", () => new Sierra3Processor(width, height, rowBytes, bpp)),
                 ("Stucki", () => new StuckiProcessor(width, height, rowBytes, bpp)),
-                ("Bayer_2x2", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Bayer2)),
-                ("Bayer_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Bayer4)),
-                ("Bayer_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Bayer8)),
-                ("Cluster_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Cluster4)),
-                ("Cluster_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Cluster8)),
-                ("Halftone_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Halftone4)),
-                ("Halftone_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.Halftone8)),
-                ("VoidCluster_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.VoidCluster4)),
-                ("VoidCluster_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.VoidCluster8)),
-                ("BlueNoise_4x4", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.BlueNoise4)),
-                ("BlueNoise_8x8", () => new OrderedProcessor(width, height, rowBytes, bpp, Constants.BlueNoise8)),
+                ("Bayer_2x2", () => new BayerProcessor(width, height, rowBytes, bpp, 2)),
+                ("Bayer_4x4", () => new BayerProcessor(width, height, rowBytes, bpp, 4)),
+                ("Bayer_8x8", () => new BayerProcessor(width, height, rowBytes, bpp, 8)),
+                ("Cluster_2x2", () => new ClusterProcessor(width, height, rowBytes, bpp, 2)),
+                ("Cluster_4x4", () => new ClusterProcessor(width, height, rowBytes, bpp, 4)),
+                ("Cluster_8x8", () => new ClusterProcessor(width, height, rowBytes, bpp, 8)),
+                ("Halftone_2x2", () => new HalftoneProcessor(width, height, rowBytes, bpp, 2)),
+                ("Halftone_4x4", () => new HalftoneProcessor(width, height, rowBytes, bpp, 4)),
+                ("Halftone_8x8", () => new HalftoneProcessor(width, height, rowBytes, bpp, 8)),
+                ("BlueNoise_2x2", () => new BlueNoiseProcessor(width, height, rowBytes, bpp, 2)),
+                ("BlueNoise_4x4", () => new BlueNoiseProcessor(width, height, rowBytes, bpp, 4)),
             };
 
             var palettes = PaletteCaster.ParsePalettes();
 
             var quantizers = new (string Name, IQuantizer Quantizer)[]
                 {
-                    (Name: "Linear_2x", Quantizer: new LinearQuantizer(2)),
-                    (Name: "Linear_8x", Quantizer: new LinearQuantizer(8))
+                    /*(Name: "Linear_2x", Quantizer: new LinearQuantizer(2)),
+                    (Name: "Linear_8x", Quantizer: new LinearQuantizer(8))*/
                 }
                 .Concat(palettes.SelectMany(p => new (string, IQuantizer)[]
                 {
-                    ($"Euclidean {p.Name} ({p.ColorCount})", new EuclideanPaletteQuantizer(p.Data)),
+                    /*($"Euclidean {p.Name} ({p.ColorCount})", new EuclideanPaletteQuantizer(p.Data)),
                     ($"Manhattan {p.Name} ({p.ColorCount})", new ManhattanPaletteQuantizer(p.Data)),
-                    ($"Linear Euclidean {p.Name} ({p.ColorCount})", new LinearEuclideanPaletteQuantizer(p.Data)),
+                    */($"Linear Euclidean {p.Name} ({p.ColorCount})", new LinearEuclideanPaletteQuantizer(p.Data)),/*
                     ($"Weighted {p.Name} ({p.ColorCount})", new WeightedPaletteQuantizer(p.Data)),
                     ($"Cie76 palette {p.Name} ({p.ColorCount})", new Cie76PaletteQuantizer(p.Data)),
                     ($"Oklab palette {p.Name} ({p.ColorCount})", new OklabPaletteQuantizer(p.Data)),
-                    ($"Ciede2000 palette {p.Name} ({p.ColorCount})", new Ciede2000PaletteQuantizer(p.Data))
+                    ($"Ciede2000 palette {p.Name} ({p.ColorCount})", new Ciede2000PaletteQuantizer(p.Data))*/
                 }))
                 .ToArray();
 
@@ -149,7 +149,7 @@ namespace DitherConsole
 
                     Log("Canvas", $"Drawing dithered...");
                     canvas.DrawBitmap(currentBitmap, xPosition, yPosition);
-                    Log("Canvas", $"Ditherd added to canvas", ConsoleColor.Green);
+                    Log("Canvas", $"Dithered added to canvas", ConsoleColor.Green);
 
                     var processorText = processorDef.Name.Replace("_", " ");
                     var quantizerText = quantizerDef.Item1.Replace("_", " ");

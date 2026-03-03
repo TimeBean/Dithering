@@ -2,28 +2,27 @@ using Dither.Quantizers;
 
 namespace Dither.Processors.OrderedProcessors;
 
-public class OrderedProcessor : IProcessor
+public abstract class OrderedProcessor : IProcessor
 {
-    private readonly int[,] _matrix;
-    private readonly int _matrixCells;
-    private readonly int _matrixSize;
-
-    public OrderedProcessor(int width, int height, int rowBytes, int bytesPerPixel, int[,] matrix)
+    protected abstract int[,] GetMatrix(int size);
+    
+    protected OrderedProcessor(int width, int height, int rowBytes, int bytesPerPixel, int size)
     {
         Width = width;
         Height = height;
         RowBytes = rowBytes;
         BytesPerPixel = bytesPerPixel;
-
-        _matrix = matrix;
-        _matrixSize = matrix.GetLength(0);
-        _matrixCells = _matrixSize * _matrixSize;
+        Size = size;
     }
 
     public int Width { get; }
     public int Height { get; }
     public int RowBytes { get; }
     public int BytesPerPixel { get; }
+    private int Size { get; }
+    private int[,] Matrix => GetMatrix(Size);
+    private int MatrixCells => MatrixSize * MatrixSize;
+    private int MatrixSize => Matrix.GetLength(0);
 
     public void Process(ref Span<byte> pixels, IQuantizer quantizer)
     {
@@ -32,16 +31,16 @@ public class OrderedProcessor : IProcessor
         for (var y = 0; y < Height; y++)
         {
             var rowStart = y * RowBytes;
-            var my = y % _matrixSize;
+            var my = y % MatrixSize;
 
             for (var x = 0; x < Width; x++)
             {
                 var px = rowStart + x * BytesPerPixel;
-                var mx = x % _matrixSize;
+                var mx = x % MatrixSize;
 
-                var m = _matrix[my, mx];
+                var m = Matrix[my, mx];
 
-                var offset = (2 * m + 1) * 255 / (2 * _matrixCells) - 127;
+                var offset = (2 * m + 1) * 255 / (2 * MatrixCells) - 127;
 
                 var r = pixels[px + 0] + offset;
                 var g = pixels[px + 1] + offset;
