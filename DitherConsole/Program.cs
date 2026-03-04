@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using Dither.Processors;
 using Dither.Processors.ErrorDiffusionProcessors;
 using Dither.Processors.NonDitherProcessors;
 using Dither.Processors.OrderedProcessors;
 using Dither.Quantizers;
 using Dither.Quantizers.Palette;
+using DitherConsole.Model;
 using SkiaSharp;
 
 namespace DitherConsole
@@ -20,208 +22,241 @@ namespace DitherConsole
 
         private const string Path = "Out";
 
-        private static bool _isDebug = true;
+        private static bool _isDebug;
 
         private static void Main(string[] args)
         {
-            var totalProcessingTime = Stopwatch.StartNew();
-            long algorithmProcessingTime = 0;
-            var algorithmCount = 0;
+            ParseArguments(args);
+            ClearOutDirectory();
 
-            foreach (var arg in args)
+            using var input = File.OpenRead(@"Examples/Mirana.png");
+            using var bitmap = SKBitmap.Decode(input);
+
+            var processors = ConstructProcessors(bitmap.Width, bitmap.Height, bitmap.RowBytes, bitmap.BytesPerPixel);
+
+            var palettes = GetPalettes();
+            var quantizers = ConstructQuantizers(palettes);
+
+            var dithers = ConstructDithers(quantizers, processors);
+            var dithereds = ProcessAll(bitmap, dithers);
+
+            for (var i = 0; i < dithereds.Count; i++)
             {
-                if (arg.Contains("--debug"))
-                {
-                    Log("Dither", "Debug enable", ConsoleColor.Yellow);
-
-                    _isDebug = true;
-                }
+                Logger.Log("Saver", $"Saving {dithereds[i].DitherName}{dithereds[i].QuantizerName}");
+                
+                var dithered = dithereds[i];
+                SaveBitmap(FromBgra(dithered.Data, bitmap.Width, bitmap.Height),
+                    $"Out/{dithered.DitherName}_{dithered.QuantizerName}_{i}.png");
+                
+                Logger.Log("Saver", $"Saved {dithereds[i].DitherName} {dithereds[i].QuantizerName}", LogLevel.Success);
             }
+            
+            Logger.Log("Dither", "Done", LogLevel.Success);
+        }
+
+        private static void ClearOutDirectory()
+        {
+            if (Directory.Exists("Out"))
+            {
+                Directory.Delete("Out", true);
+            }
+
+            Directory.CreateDirectory("Out");
+        }
+
+        private static SKBitmap FromBgra(byte[] bgra, int width, int height)
+        {
+            var info = new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
+
+            if (bgra.Length != width * height * 4)
+                throw new ArgumentException("Invalid buffer size");
+
+            var bitmap = new SKBitmap(info);
+            bgra.CopyTo(bitmap.GetPixelSpan());
+
+            return bitmap;
+        }
+
+        private static List<Dithered> ProcessAll(SKBitmap bitmap, List<Model.Dither> dithers)
+        {
+            var dithereds = new List<Dithered>();
+
+            Parallel.ForEach(dithers, dither =>
+            {
+                var dithered = Process(bitmap, dither);
+
+                dithereds.Add(dithered);
+            });
+
+            dithereds.Sort((a, b) =>
+            {
+                var result = string.Compare(a.DitherName, b.DitherName, StringComparison.Ordinal);
+
+                if (result != 0)
+                {
+                    return result;
+                }
+
+                return string.Compare(a.QuantizerName, b.QuantizerName, StringComparison.Ordinal);
+            });
+
+            return dithereds;
+        }
+
+        private static Dithered Process(SKBitmap bitmap, Model.Dither dither)
+        {
+            Logger.Log("Algorithm",
+                $"{dither.Processor.GetType().Name} via {dither.Quantizer.GetType().Name} dithering...");
+
+            using var currentBitmap = bitmap.Copy();
+            var pixelSpan = currentBitmap.GetPixelSpan();
+
+            dither.Processor.Process(ref pixelSpan, dither.Quantizer);
+
+            var fileName = $"Out/{dither.Processor}_{dither.Quantizer}.png"
+                .Replace(" ", "")
+                .Replace("(", "-")
+                .Replace(")", "");
 
             if (_isDebug)
             {
-                _textPaint = new SKPaint
+                const int topOffset = 2;
+                const int leftOffset = 4;
+
+                var canvas = new SKCanvas(currentBitmap);
+
+                var palette = pixelSpan.GetPalette();
+                var uniqueColors = pixelSpan.GetUniqueColorCount();
+                
+                DrawText(canvas, $"processor: {dither.Processor}", leftOffset, topOffset + FontSize);
+                DrawText(canvas, $"quantizer: {dither.Quantizer}", leftOffset, topOffset + FontSize + 4 + FontSize);
+                DrawText(canvas, $"output colors: {uniqueColors}", leftOffset, topOffset + FontSize + 4 + FontSize + 4 + FontSize);
+
+                if (dither.Processor is not OriginalProcessor)
                 {
-                    Color = SKColors.GhostWhite,
-                    IsAntialias = true
-                };
-
-                _shadowPaint = new SKPaint
-                {
-                    Color = SKColors.Black,
-                    IsAntialias = true,
-                    Style = SKPaintStyle.Stroke,
-                    StrokeWidth = 4f,
-                    MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 2f)
-                };
-            }
-
-            using var input = File.OpenRead(@"Examples/Mirana.png");
-
-            using var originalBitmap = SKBitmap.Decode(input);
-
-            var width = originalBitmap.Width;
-            var height = originalBitmap.Height;
-            var rowBytes = originalBitmap.RowBytes;
-            var bpp = originalBitmap.BytesPerPixel;
-
-            if (!Directory.Exists(Path))
-            {
-                Log("Dither", $"{Path}/ doesn't exists, creating...");
-                Directory.CreateDirectory("Out");
-            }
-            else
-            {
-                Log("Dither", $"{Path}/ exists, deleting and creating...");
-                Directory.Delete($"{Path}", true);
-                Directory.CreateDirectory($"{Path}");
-            }
-
-            var processors = new (string Name, Func<IProcessor> Processor)[]
-            {
-                ("Original", () => new OriginalProcessor(width, height, rowBytes, bpp)),
-                ("Base", () => new BaseProcessor(width, height, rowBytes, bpp)),
-                ("Atkinson", () => new AtkinsonProcessor(width, height, rowBytes, bpp)),
-                ("Burkes", () => new BurkesProcessor(width, height, rowBytes, bpp)),
-                ("Floyd-Steinberg", () => new FloydSteinbergProcessor(width, height, rowBytes, bpp)),
-                ("Jarvis-Judice-Ninke", () => new JarvisJudiceNinkeProcessor(width, height, rowBytes, bpp)),
-                ("Sierra_3_Row", () => new Sierra3Processor(width, height, rowBytes, bpp)),
-                ("Stucki", () => new StuckiProcessor(width, height, rowBytes, bpp)),
-                ("Bayer_2x2", () => new BayerProcessor(width, height, rowBytes, bpp, 2)),
-                ("Bayer_4x4", () => new BayerProcessor(width, height, rowBytes, bpp, 4)),
-                ("Bayer_8x8", () => new BayerProcessor(width, height, rowBytes, bpp, 8)),
-                ("Cluster_2x2", () => new ClusterProcessor(width, height, rowBytes, bpp, 2)),
-                ("Cluster_4x4", () => new ClusterProcessor(width, height, rowBytes, bpp, 4)),
-                ("Cluster_8x8", () => new ClusterProcessor(width, height, rowBytes, bpp, 8)),
-                ("Halftone_2x2", () => new HalftoneProcessor(width, height, rowBytes, bpp, 2)),
-                ("Halftone_4x4", () => new HalftoneProcessor(width, height, rowBytes, bpp, 4)),
-                ("Halftone_8x8", () => new HalftoneProcessor(width, height, rowBytes, bpp, 8)),
-                ("BlueNoise_2x2", () => new BlueNoiseProcessor(width, height, rowBytes, bpp, 2)),
-                ("BlueNoise_4x4", () => new BlueNoiseProcessor(width, height, rowBytes, bpp, 4)),
-            };
-
-            var palettes = PaletteCaster.ParsePalettes();
-
-            var quantizers = new (string Name, IQuantizer Quantizer)[]
-                {
-                    /*(Name: "Linear_2x", Quantizer: new LinearQuantizer(2)),
-                    (Name: "Linear_8x", Quantizer: new LinearQuantizer(8))*/
-                }
-                .Concat(palettes.SelectMany(p => new (string, IQuantizer)[]
-                {
-                    /*($"Euclidean {p.Name} ({p.ColorCount})", new EuclideanPaletteQuantizer(p.Data)),
-                    ($"Manhattan {p.Name} ({p.ColorCount})", new ManhattanPaletteQuantizer(p.Data)),
-                    */($"Linear Euclidean {p.Name} ({p.ColorCount})", new LinearEuclideanPaletteQuantizer(p.Data)),/*
-                    ($"Weighted {p.Name} ({p.ColorCount})", new WeightedPaletteQuantizer(p.Data)),
-                    ($"Cie76 palette {p.Name} ({p.ColorCount})", new Cie76PaletteQuantizer(p.Data)),
-                    ($"Oklab palette {p.Name} ({p.ColorCount})", new OklabPaletteQuantizer(p.Data)),
-                    ($"Ciede2000 palette {p.Name} ({p.ColorCount})", new Ciede2000PaletteQuantizer(p.Data))*/
-                }))
-                .ToArray();
-
-            using var compilationBitmap = new SKBitmap(width * quantizers.Length, height * processors.Length);
-            using var canvas = new SKCanvas(compilationBitmap);
-            canvas.Clear(SKColors.Black);
-
-            for (var pIndex = 0; pIndex < processors.Length; pIndex++)
-            {
-                var processorDef = processors[pIndex];
-                var yPosition = pIndex * height;
-
-                for (var qIndex = 0; qIndex < quantizers.Length; qIndex++)
-                {
-                    var quantizerDef = quantizers[qIndex];
-                    var xPosition = qIndex * width;
-
-                    using var currentBitmap = originalBitmap.Copy();
-                    var pixelSpan = currentBitmap.GetPixelSpan();
-
-                    var processor = processorDef.Processor();
-
-                    Log("Processor", $"Processing dither...");
-                    var processorStopwatch = Stopwatch.StartNew();
-                    processor.Process(ref pixelSpan, quantizerDef.Item2);
-                    processorStopwatch.Stop();
-                    algorithmProcessingTime += processorStopwatch.ElapsedMilliseconds;
-                    algorithmCount++;
-                    Log("Processor", $"Processed dither in {processorStopwatch.ElapsedMilliseconds} ms",
-                        ConsoleColor.Green);
-
-                    Log("Canvas", $"Drawing dithered...");
-                    canvas.DrawBitmap(currentBitmap, xPosition, yPosition);
-                    Log("Canvas", $"Dithered added to canvas", ConsoleColor.Green);
-
-                    var processorText = processorDef.Name.Replace("_", " ");
-                    var quantizerText = quantizerDef.Item1.Replace("_", " ");
-
-                    const int topOffset = 2;
-                    const int leftOffset = 4;
-
-                    if (_isDebug)
-                    {
-                        Log("Canvas", $"Add debug info to image", ConsoleColor.Yellow);
-
-                        if (processors[pIndex].Name == "Original")
-                        {
-                            DrawText(canvas, $"colors: {pixelSpan.GetUniqueColorCount()}", xPosition + leftOffset,
-                                yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize);
-                        }
-                        else
-                        {
-                            DrawText(canvas, $"processor: {processorText}", xPosition + leftOffset,
-                                yPosition + topOffset + FontSize);
-                            DrawText(canvas, $"quantizer: {quantizerText}", xPosition + leftOffset,
-                                yPosition + topOffset + FontSize + 4 + FontSize);
-                            DrawText(canvas, $"output colors: {pixelSpan.GetUniqueColorCount()}",
-                                xPosition + leftOffset,
-                                yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize);
-
-                            if (quantizers[qIndex].Item2.GetType() == typeof(PaletteQuantizer))
-                            {
-                                DrawPalette(canvas, ((PaletteQuantizer)quantizers[qIndex].Item2).Palette,
-                                    xPosition + leftOffset,
-                                    yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize + FontSize, width);
-                            }
-
-                            DrawPalette(canvas, pixelSpan.GetPalette(), xPosition + leftOffset,
-                                yPosition + topOffset + FontSize + 4 + FontSize + 4 + FontSize + FontSize + 12, width);
-                        }
-                    }
-
-                    var fileName = $"Out/{processorDef.Name}_{quantizerDef.Item1}.png".Replace(" ", "_")
-                        .Replace("_", "")
-                        .Replace("(", "-")
-                        .Replace(")", "");
-
-                    SaveBitmap(currentBitmap, fileName);
-
-                    Log("Algorithm", $"Saved {fileName}");
+                    DrawPalette(canvas, palette, leftOffset,
+                        topOffset + FontSize + 4 + FontSize + 4 + FontSize + FontSize + 12, currentBitmap.Width);
                 }
             }
 
-            Log("Grid", "Saving bitmap...");
+            //SaveBitmap(currentBitmap, fileName);
 
-            const string compilationFileName = "Out/!CompilationGrid.png";
-            SaveBitmap(compilationBitmap, compilationFileName);
+            Logger.Log("Algorithm", $"{dither.Processor.GetType().Name} via {dither.Quantizer.GetType()} dithered",
+                LogLevel.Success);
 
-            totalProcessingTime.Stop();
-            Log("Dither", $"{algorithmCount} algorithms done in {algorithmProcessingTime} ms ({algorithmProcessingTime / (float)algorithmCount} ms)", ConsoleColor.Green);
-            Log("Dither", $"Done in {totalProcessingTime.ElapsedMilliseconds} ms", ConsoleColor.Green);
+            var dithered = new byte[pixelSpan.Length];
+            pixelSpan.CopyTo(dithered);
+
+            return new Dithered(dither.Processor.GetType().Name, dither.Quantizer.GetType().Name, dithered);
         }
 
-        private static void Log(string point, string message, ConsoleColor? color = null)
+        private static List<Model.Dither> ConstructDithers(List<IQuantizer> quantizers, List<IProcessor> processors)
         {
-            if (color.HasValue)
+            var dithers = new List<Model.Dither>();
+
+            foreach (var quantizer in quantizers)
             {
-                Console.ForegroundColor = (ConsoleColor)color;
+                foreach (var processor in processors)
+                {
+                    dithers.Add(new Model.Dither(quantizer, processor));
+                }
             }
 
-            Console.WriteLine($"[{DateTime.Now}] [{point}] {message}");
+            return dithers;
+        }
 
-            if (color.HasValue)
+        private static List<IQuantizer> ConstructQuantizers(Palette[]? palettes = null)
+        {
+            var quantizers = new List<IQuantizer>
             {
-                Console.ResetColor();
+                new LinearQuantizer(2),
+                new LinearQuantizer(4),
+                new LinearQuantizer(8),
+                new OneBitQuantizer(false),
+                new OneBitQuantizer(true)
+            };
+            
+            if (palettes != null)
+            {
+                foreach (var palette in palettes)
+                {
+                    var data = palette.Data;
+
+                    quantizers.Add(new EuclideanPaletteQuantizer(data));
+                    quantizers.Add(new LinearEuclideanPaletteQuantizer(data));
+                    quantizers.Add(new Cie76PaletteQuantizer(data));
+                    quantizers.Add(new Ciede2000PaletteQuantizer(data));
+                    quantizers.Add(new ManhattanPaletteQuantizer(data));
+                    quantizers.Add(new OklabPaletteQuantizer(data));
+                    quantizers.Add(new WeightedPaletteQuantizer(data));
+                }
             }
+
+            return quantizers;
+        }
+
+        private static List<IProcessor> ConstructProcessors(int width, int height, int rowBytes, int bytesPerPixel)
+        {
+            return new List<IProcessor>()
+            {
+                new OriginalProcessor(width, height, rowBytes, bytesPerPixel),
+                new BaseProcessor(width, height, rowBytes, bytesPerPixel),
+                new AtkinsonProcessor(width, height, rowBytes, bytesPerPixel),
+                new BurkesProcessor(width, height, rowBytes, bytesPerPixel),
+                new FloydSteinbergProcessor(width, height, rowBytes, bytesPerPixel),
+                new JarvisJudiceNinkeProcessor(width, height, rowBytes, bytesPerPixel),
+                new Sierra3Processor(width, height, rowBytes, bytesPerPixel),
+                new StuckiProcessor(width, height, rowBytes, bytesPerPixel),
+            };
+        }
+
+        private static Palette[] GetPalettes()
+        {
+            try
+            {
+                var palettes = PaletteParser.Parse();
+                Logger.Log("Dither", "Palettes parsed", LogLevel.Success);
+
+                return palettes;
+            }
+            catch (IOException e)
+            {
+                Logger.Log("Dither", $"Palettes not parsed\n{e}", LogLevel.Error);
+                throw;
+            }
+        }
+
+        private static void ParseArguments(string[] args)
+        {
+            for (var i = 0; i < args.Length; i++)
+            {
+                if (args[i].Contains("--debug"))
+                {
+                    InitializeDebug();
+                }
+            }
+        }
+
+        private static void InitializeDebug()
+        {
+            _isDebug = true;
+
+            _textPaint = new SKPaint
+            {
+                Color = SKColors.GhostWhite,
+                IsAntialias = true
+            };
+
+            _shadowPaint = new SKPaint
+            {
+                Color = SKColors.Black,
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 4f,
+                MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 2f)
+            };
+
+            Logger.Log("Dither", "Debug enable", LogLevel.Warning);
         }
 
         private static void DrawText(SKCanvas canvas, string text, int xPosition, int yPosition)

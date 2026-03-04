@@ -1,10 +1,11 @@
 using System.Globalization;
+using DitherConsole.Model;
 
 namespace DitherConsole;
 
-public static class PaletteCaster
+public static class PaletteParser
 {
-    public static Palette[] ParsePalettes()
+    public static Palette[] Parse()
     {
         const string path = @"Palettes/";
 
@@ -24,7 +25,7 @@ public static class PaletteCaster
 
         foreach (var file in paletteFiles)
         {
-            var data = ParsePaletteFile(file); 
+            var data = ParseFile(file); 
             var name = Path.GetFileNameWithoutExtension(file);
             palettes.Add(new Palette(name, data));
         }
@@ -32,7 +33,7 @@ public static class PaletteCaster
         return palettes.ToArray();
     }
 
-    private static float[,] ParsePaletteFile(string filePath)
+    private static float[,] ParseFile(string filePath)
     {
         var lines = File.ReadAllLines(filePath)
             .Select(l => l.Trim())

@@ -1,4 +1,4 @@
-namespace DitherConsole;
+namespace DitherConsole.Model;
 
 public class Palette
 {
