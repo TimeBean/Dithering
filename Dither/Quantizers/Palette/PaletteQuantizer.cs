@@ -3,12 +3,14 @@ namespace Dither.Quantizers.Palette;
 public abstract class PaletteQuantizer : IQuantizer
 {
     protected abstract int GetNearestColorIndex(float red, float green, float blue);
-    
-    protected PaletteQuantizer(float[,] palette)
+
+    protected PaletteQuantizer(string paletteName, float[,] palette)
     {
+        PaletteName = paletteName;
         Palette = palette;
     }
-
+    
+    public string PaletteName { get; }
     public float[,] Palette { get; }
 
     public float[] Quantize(float[] pixels)
@@ -27,4 +29,7 @@ public abstract class PaletteQuantizer : IQuantizer
 
         return result;
     }
+
+    public override string ToString()
+        => $"PaletteQuantizer.{PaletteName}";
 }

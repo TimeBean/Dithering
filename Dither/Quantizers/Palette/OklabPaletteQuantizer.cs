@@ -2,9 +2,8 @@ namespace Dither.Quantizers.Palette;
 
 public sealed class OklabPaletteQuantizer : PaletteQuantizer
 {
-    public OklabPaletteQuantizer(float[,] palette) : base(palette)
-    {
-    }
+    public OklabPaletteQuantizer(string paletteName, float[,] palette) 
+        : base(paletteName, palette) { }
 
     private static void RgBtoOklab(float red, float green, float blue, out float luminance, out float alpha,
         out float bb)
@@ -57,4 +56,7 @@ public sealed class OklabPaletteQuantizer : PaletteQuantizer
 
         return nearestIndex;
     }
+    
+    public override string ToString()
+        => $"PaletteQuantizer.{PaletteName}.Oklab";
 }

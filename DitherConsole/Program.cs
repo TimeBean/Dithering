@@ -1,9 +1,7 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.Contracts;
+﻿using System.Collections.Concurrent;
 using Dither.Processors;
 using Dither.Processors.ErrorDiffusionProcessors;
 using Dither.Processors.NonDitherProcessors;
-using Dither.Processors.OrderedProcessors;
 using Dither.Quantizers;
 using Dither.Quantizers.Palette;
 using DitherConsole.Model;
@@ -45,11 +43,37 @@ namespace DitherConsole
                 Logger.Log("Saver", $"Saving {dithereds[i].DitherName}{dithereds[i].QuantizerName}");
                 
                 var dithered = dithereds[i];
-                SaveBitmap(FromBgra(dithered.Data, bitmap.Width, bitmap.Height),
-                    $"Out/{dithered.DitherName}_{dithered.QuantizerName}_{i}.png");
+                SaveBitmap(FromBgra(dithered.Data, bitmap.Width, bitmap.Height), $"Out/{dithered.DitherName}_{dithered.QuantizerName}_{i}.png");
                 
                 Logger.Log("Saver", $"Saved {dithereds[i].DitherName} {dithereds[i].QuantizerName}", LogLevel.Success);
             }
+
+            var canvasBitmap = new SKBitmap(bitmap.Width * quantizers.Count, bitmap.Height * processors.Count);
+            var canvas = new SKCanvas(canvasBitmap);
+            canvas.Clear(SKColors.Purple);
+            
+            var currentDither = dithereds.First().DitherName;
+            var row = 0;
+            var column = 0;
+            foreach (var dithered in dithereds)
+            {
+                if (currentDither != dithered.DitherName)
+                {
+                    currentDither = dithered.DitherName;
+                    column++;
+                    row = 0;
+                }
+
+                canvas.DrawBitmap(
+                    FromBgra(dithered.Data, bitmap.Width, bitmap.Height),
+                    row * bitmap.Width,
+                    column * bitmap.Height
+                );
+
+                row++;
+            }
+            
+            SaveBitmap(canvasBitmap, "Out/!grid.png");
             
             Logger.Log("Dither", "Done", LogLevel.Success);
         }
@@ -79,7 +103,7 @@ namespace DitherConsole
 
         private static List<Dithered> ProcessAll(SKBitmap bitmap, List<Model.Dither> dithers)
         {
-            var dithereds = new List<Dithered>();
+            var dithereds = new ConcurrentBag<Dithered>();
 
             Parallel.ForEach(dithers, dither =>
             {
@@ -88,25 +112,20 @@ namespace DitherConsole
                 dithereds.Add(dithered);
             });
 
-            dithereds.Sort((a, b) =>
-            {
-                var result = string.Compare(a.DitherName, b.DitherName, StringComparison.Ordinal);
+            var result = dithereds
+                .OrderBy(x => x.DitherName.Contains("OriginalProcessor") ? 0 : 1)
+                .ThenBy(x => x.DitherName.Contains("BaseProcessor") ? 0 : 1)
+                .ThenBy(x => x.DitherName, StringComparer.Ordinal)
+                .ThenBy(x => x.QuantizerName, StringComparer.Ordinal)
+                .ToList();
 
-                if (result != 0)
-                {
-                    return result;
-                }
-
-                return string.Compare(a.QuantizerName, b.QuantizerName, StringComparison.Ordinal);
-            });
-
-            return dithereds;
+            return result;
         }
 
         private static Dithered Process(SKBitmap bitmap, Model.Dither dither)
         {
             Logger.Log("Algorithm",
-                $"{dither.Processor.GetType().Name} via {dither.Quantizer.GetType().Name} dithering...");
+                $"{dither.Processor.GetType().Name} via {dither.Quantizer} dithering...");
 
             using var currentBitmap = bitmap.Copy();
             var pixelSpan = currentBitmap.GetPixelSpan();
@@ -128,7 +147,7 @@ namespace DitherConsole
                 var palette = pixelSpan.GetPalette();
                 var uniqueColors = pixelSpan.GetUniqueColorCount();
                 
-                DrawText(canvas, $"processor: {dither.Processor}", leftOffset, topOffset + FontSize);
+                DrawText(canvas, $"processor: {dither.Processor.ToString().Replace("Dither.Processors.", "")}", leftOffset, topOffset + FontSize);
                 DrawText(canvas, $"quantizer: {dither.Quantizer}", leftOffset, topOffset + FontSize + 4 + FontSize);
                 DrawText(canvas, $"output colors: {uniqueColors}", leftOffset, topOffset + FontSize + 4 + FontSize + 4 + FontSize);
 
@@ -141,13 +160,13 @@ namespace DitherConsole
 
             //SaveBitmap(currentBitmap, fileName);
 
-            Logger.Log("Algorithm", $"{dither.Processor.GetType().Name} via {dither.Quantizer.GetType()} dithered",
+            Logger.Log("Algorithm", $"{dither.Processor.GetType().Name} via {dither.Quantizer} dithered",
                 LogLevel.Success);
 
             var dithered = new byte[pixelSpan.Length];
             pixelSpan.CopyTo(dithered);
 
-            return new Dithered(dither.Processor.GetType().Name, dither.Quantizer.GetType().Name, dithered);
+            return new Dithered(dither.Processor.GetType().Name, dither.Quantizer.ToString(), dithered);
         }
 
         private static List<Model.Dither> ConstructDithers(List<IQuantizer> quantizers, List<IProcessor> processors)
@@ -180,15 +199,16 @@ namespace DitherConsole
             {
                 foreach (var palette in palettes)
                 {
+                    var name = palette.Name;
                     var data = palette.Data;
 
-                    quantizers.Add(new EuclideanPaletteQuantizer(data));
-                    quantizers.Add(new LinearEuclideanPaletteQuantizer(data));
-                    quantizers.Add(new Cie76PaletteQuantizer(data));
-                    quantizers.Add(new Ciede2000PaletteQuantizer(data));
-                    quantizers.Add(new ManhattanPaletteQuantizer(data));
-                    quantizers.Add(new OklabPaletteQuantizer(data));
-                    quantizers.Add(new WeightedPaletteQuantizer(data));
+                    quantizers.Add(new EuclideanPaletteQuantizer(name, data));
+                    quantizers.Add(new LinearEuclideanPaletteQuantizer(name, data));
+                    quantizers.Add(new Cie76PaletteQuantizer(name, data));
+                    quantizers.Add(new Ciede2000PaletteQuantizer(name, data));
+                    quantizers.Add(new ManhattanPaletteQuantizer(name, data));
+                    quantizers.Add(new OklabPaletteQuantizer(name, data));
+                    quantizers.Add(new WeightedPaletteQuantizer(name, data));
                 }
             }
 

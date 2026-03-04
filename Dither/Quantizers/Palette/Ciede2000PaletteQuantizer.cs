@@ -2,8 +2,8 @@ namespace Dither.Quantizers.Palette;
 
 public sealed class Ciede2000PaletteQuantizer : PaletteQuantizer
 {
-    public Ciede2000PaletteQuantizer(float[,] palette) 
-        : base(palette) { }
+    public Ciede2000PaletteQuantizer(string paletteName, float[,] palette) 
+        : base(paletteName, palette) { }
 
     private static float DeltaE2000(float luminance1, float alpha1, float blue, float luminance2, float alpha2,
         float blue2)
@@ -37,4 +37,7 @@ public sealed class Ciede2000PaletteQuantizer : PaletteQuantizer
 
         return nearestIndex;
     }
+    
+    public override string ToString()
+        => $"PaletteQuantizer.{PaletteName}.Ciede2000";
 }

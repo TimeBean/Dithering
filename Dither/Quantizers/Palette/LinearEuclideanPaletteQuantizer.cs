@@ -2,9 +2,8 @@ namespace Dither.Quantizers.Palette;
 
 public sealed class LinearEuclideanPaletteQuantizer : PaletteQuantizer
 {
-    public LinearEuclideanPaletteQuantizer(float[,] palette) : base(palette)
-    {
-    }
+    public LinearEuclideanPaletteQuantizer(string paletteName, float[,] palette) 
+        : base(paletteName, palette) { }
 
     private static float ToLinear(float c)
     {
@@ -44,4 +43,7 @@ public sealed class LinearEuclideanPaletteQuantizer : PaletteQuantizer
 
         return nearestIndex;
     }
+    
+    public override string ToString()
+        => $"PaletteQuantizer.{PaletteName}.LinearEuclidean";
 }
