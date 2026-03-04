@@ -43,7 +43,7 @@ namespace DitherConsole
                 Logger.Log("Saver", $"Saving {dithereds[i].DitherName}{dithereds[i].QuantizerName}");
                 
                 var dithered = dithereds[i];
-                SaveBitmap(FromBgra(dithered.Data, bitmap.Width, bitmap.Height), $"Out/{dithered.DitherName}_{dithered.QuantizerName}_{i}.png");
+                SaveBitmap(FromBgra(dithered.Data, bitmap.Width, bitmap.Height), $"{Path}/{dithered.DitherName}_{dithered.QuantizerName}_{i}.png");
                 
                 Logger.Log("Saver", $"Saved {dithereds[i].DitherName} {dithereds[i].QuantizerName}", LogLevel.Success);
             }
@@ -73,19 +73,19 @@ namespace DitherConsole
                 row++;
             }
             
-            SaveBitmap(canvasBitmap, "Out/!grid.png");
+            SaveBitmap(canvasBitmap, $"{Path}/!grid.png");
             
             Logger.Log("Dither", "Done", LogLevel.Success);
         }
 
         private static void ClearOutDirectory()
         {
-            if (Directory.Exists("Out"))
+            if (Directory.Exists(Path))
             {
-                Directory.Delete("Out", true);
+                Directory.Delete(Path, true);
             }
 
-            Directory.CreateDirectory("Out");
+            Directory.CreateDirectory(Path);
         }
 
         private static SKBitmap FromBgra(byte[] bgra, int width, int height)
@@ -132,7 +132,7 @@ namespace DitherConsole
 
             dither.Processor.Process(ref pixelSpan, dither.Quantizer);
 
-            var fileName = $"Out/{dither.Processor}_{dither.Quantizer}.png"
+            var fileName = $"{Path}/{dither.Processor}_{dither.Quantizer}.png"
                 .Replace(" ", "")
                 .Replace("(", "-")
                 .Replace(")", "");
